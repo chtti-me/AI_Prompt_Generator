@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}首頁 - AI Prompt Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 歡迎區域 -->
+    <div class="col-12 mb-4">
+        <div class="card bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body text-center py-5">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-magic"></i> AI Prompt Generator Platform
+                </h1>
+                <p class="lead mb-4">
+                    智能提示詞生成平台 | 讓 AI 幫你寫出更好的提示詞
+                </p>
+                <a href="/generator" class="btn btn-light btn-lg">
+                    <i class="fas fa-rocket"></i> 立即開始
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能卡片 -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-wand-magic-sparkles fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">智能生成</h5>
+                <p class="card-text">
+                    使用 AI 技術（OpenAI GPT 或 Google Gemini）自動生成高質量提示詞
+                </p>
+                <a href="/generator" class="btn btn-primary">開始生成</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-book fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">RAG 知識庫</h5>
+                <p class="card-text">
+                    上傳你的提示詞範本，建立個人知識庫，快速檢索和重用
+                </p>
+                <a href="/library" class="btn btn-success">管理知識庫</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-line fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">Google Sheets 整合</h5>
+                <p class="card-text">
+                    自動同步到 Google Sheets，團隊協作更輕鬆
+                </p>
+                <a href="/settings" class="btn btn-info">設定整合</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計資訊 -->
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> 系統狀態
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center" id="system-stats">
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-robot fa-2x text-primary mb-2"></i>
+                            <h3 class="mb-0" id="ai-status">-</h3>
+                            <p class="text-muted mb-0">AI 服務</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-database fa-2x text-success mb-2"></i>
+                            <h3 class="mb-0" id="rag-chunks">-</h3>
+                            <p class="text-muted mb-0">知識庫文檔</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-history fa-2x text-info mb-2"></i>
+                            <h3 class="mb-0" id="total-generated">-</h3>
+                            <p class="text-muted mb-0">已生成提示詞</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <i class="fas fa-table fa-2x text-warning mb-2"></i>
+                            <h3 class="mb-0" id="sheets-status">-</h3>
+                            <p class="text-muted mb-0">Sheets 同步</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速開始指南 -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> 快速開始
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center mb-3">
+                            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <strong>1</strong>
+                            </div>
+                        </div>
+                        <h6 class="text-center">配置 API Key</h6>
+                        <p class="text-muted small">
+                            在設定頁面配置 OpenAI 或 Google Gemini 的 API Key
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center mb-3">
+                            <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <strong>2</strong>
+                            </div>
+                        </div>
+                        <h6 class="text-center">生成提示詞</h6>
+                        <p class="text-muted small">
+                            填寫需求問卷，AI 自動生成客製化提示詞
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center mb-3">
+                            <div class="rounded-circle bg-info text-white d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <strong>3</strong>
+                            </div>
+                        </div>
+                        <h6 class="text-center">優化與調整</h6>
+                        <p class="text-muted small">
+                            使用 AI 優化功能改進提示詞質量
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center mb-3">
+                            <div class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <strong>4</strong>
+                            </div>
+                        </div>
+                        <h6 class="text-center">匯出使用</h6>
+                        <p class="text-muted small">
+                            匯出為 Markdown 或同步到 Google Sheets
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 載入系統狀態
+async function loadSystemStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        // AI 服務狀態
+        const aiStatus = data.ai_service.available ? '✓ 可用' : '✗ 不可用';
+        document.getElementById('ai-status').textContent = aiStatus;
+
+        // RAG 知識庫
+        const ragChunks = data.rag_service.available ?
+            data.rag_service.stats.total_chunks : '未啟用';
+        document.getElementById('rag-chunks').textContent = ragChunks;
+
+        // Sheets 狀態
+        const sheetsStatus = data.google_sheets.enabled ? '✓ 已連接' : '未設定';
+        document.getElementById('sheets-status').textContent = sheetsStatus;
+
+        // 已生成提示詞（這裡需要從資料庫查詢，暫時顯示 0）
+        document.getElementById('total-generated').textContent = '0';
+
+    } catch (error) {
+        console.error('載入狀態失敗:', error);
+    }
+}
+
+// 頁面載入時執行
+document.addEventListener('DOMContentLoaded', loadSystemStatus);
+</script>
+{% endblock %}

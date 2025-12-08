@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動教學：從零打造 AI Prompt Generator 提示詞生成平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .slide {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .slide.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        .step-indicator.active {
+            background-color: #fbbf24;
+            color: #1f2937;
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.5);
+        }
+        .step-indicator.completed {
+            background-color: #10b981;
+            color: white;
+        }
+        .code-block {
+            background-color: #1e293b;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            color: #e2e8f0;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+        .file-name {
+            background-color: #475569;
+            color: #fbbf24;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="min-h-screen py-8 px-4">
+        <div class="container mx-auto max-w-6xl">
+
+            <!-- Header -->
+            <header class="text-center mb-8 text-white">
+                <div class="mb-4">
+                    <i class="fas fa-magic text-6xl"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">從零打造 AI Prompt Generator</h1>
+                <p class="text-xl md:text-2xl mb-4 opacity-90">
+                    完整互動式建置教學 - 智能提示詞生成平台
+                </p>
+                <div class="flex justify-center space-x-4 text-sm opacity-80">
+                    <span><i class="fas fa-user"></i> 建置人：曾慶良 (阿亮老師)</span>
+                </div>
+                <div class="flex justify-center space-x-4 mt-3">
+                    <a href="https://www.facebook.com/iddmail" target="_blank" class="text-white hover:text-yellow-300 transition-colors">
+                        <i class="fab fa-facebook-f text-2xl"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="text-white hover:text-red-400 transition-colors">
+                        <i class="fab fa-youtube text-2xl"></i>
+                    </a>
+                    <a href="https://thisnote.space/" target="_blank" class="text-white hover:text-green-400 transition-colors">
+                        <i class="fas fa-robot text-2xl"></i>
+                    </a>
+                </div>
+
+                <!-- 功能導航 -->
+                <div class="flex justify-center gap-4 mt-6">
+                    <a href="/" class="px-6 py-3 bg-yellow-400 text-gray-800 font-bold rounded-full shadow-lg hover:bg-yellow-300 transition-all transform hover:scale-105">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>教學簡報
+                    </a>
+                    <a href="/generator" class="px-6 py-3 bg-white text-purple-700 font-bold rounded-full shadow-lg hover:bg-gray-100 transition-all transform hover:scale-105">
+                        <i class="fas fa-magic mr-2"></i>提示詞生成器
+                    </a>
+                </div>
+            </header>
+
+            <!-- Progress Bar -->
+            <div id="progress-bar" class="flex justify-center items-center gap-2 md:gap-3 mb-8 flex-wrap px-4">
+                <!-- Step indicators will be injected here by JS -->
+            </div>
+
+            <!-- Slides Container -->
+            <main id="slides-container" class="bg-white rounded-2xl shadow-2xl p-6 md:p-12 min-h-[500px]">
+
+                <!-- Slide 1: Introduction -->
+                <div id="slide-1" class="slide active">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-rocket text-purple-600"></i> 歡迎！準備打造專業級 AI 提示詞平台
+                    </h2>
+                    <p class="text-lg mb-4">
+                        你想擁有一個能自動生成高品質提示詞、整合 RAG 知識庫、支援多種 AI 服務的專業平台嗎？
+                    </p>
+                    <p class="mb-6">
+                        本教學將帶你<strong class="text-purple-600">從一個空資料夾開始</strong>，一步步建立完整的 AI Prompt Generator Platform。完成後，你將擁有一個功能強大的 Web 應用程式！
+                    </p>
+
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-purple-800">🎯 本次教學涵蓋：</h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>環境準備</strong> - Python 環境與套件安裝</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>專案結構</strong> - 完整目錄架構規劃</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>後端開發</strong> - Flask + AI 服務整合</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>前端界面</strong> - 互動式 Web 介面</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>RAG 系統</strong> - 向量資料庫與語義搜尋</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                <span><strong>系統測試</strong> - 完整功能驗證</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-yellow-800"><i class="fas fa-lightbulb"></i> 學習目標：</p>
+                        <ul class="list-disc list-inside mt-2 text-yellow-700 space-y-1">
+                            <li>理解 AI 提示詞系統的完整架構</li>
+                            <li>掌握 Flask Web 開發實務</li>
+                            <li>學會整合多種 AI 服務 (OpenAI、Gemini)</li>
+                            <li>實作 RAG (檢索增強生成) 系統</li>
+                            <li>建立可擴展的專業級應用程式</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 2: Prerequisites -->
+                <div id="slide-2" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-clipboard-check text-blue-600"></i> 開始前的準備工作
+                    </h2>
+                    <p class="mb-6">在開始建置之前，請確認你的電腦已安裝以下工具：</p>
+
+                    <div class="space-y-4 mb-8">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-r-lg">
+                            <h3 class="font-bold text-lg text-blue-800 mb-2">
+                                <i class="fab fa-python"></i> 1. Python 3.12 或更高版本
+                            </h3>
+                            <p class="text-blue-700 mb-3">本專案需要 Python 3.12+ 才能正常運行</p>
+                            <a href="https://www.python.org/downloads/" target="_blank" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-download"></i> 下載 Python
+                            </a>
+                        </div>
+
+                        <div class="bg-green-50 border-l-4 border-green-500 p-5 rounded-r-lg">
+                            <h3 class="font-bold text-lg text-green-800 mb-2">
+                                <i class="fas fa-terminal"></i> 2. 命令列工具
+                            </h3>
+                            <p class="text-green-700">Windows: CMD 或 PowerShell / Mac/Linux: Terminal</p>
+                        </div>
+
+                        <div class="bg-purple-50 border-l-4 border-purple-500 p-5 rounded-r-lg">
+                            <h3 class="font-bold text-lg text-purple-800 mb-2">
+                                <i class="fas fa-code"></i> 3. 文字編輯器 (推薦)
+                            </h3>
+                            <p class="text-purple-700 mb-3">VS Code, Sublime Text, 或任何你喜歡的編輯器</p>
+                            <a href="https://code.visualstudio.com/" target="_blank" class="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-download"></i> 下載 VS Code
+                            </a>
+                        </div>
+
+                        <div class="bg-orange-50 border-l-4 border-orange-500 p-5 rounded-r-lg">
+                            <h3 class="font-bold text-lg text-orange-800 mb-2">
+                                <i class="fas fa-key"></i> 4. AI API 金鑰 (至少一個)
+                            </h3>
+                            <div class="text-orange-700 space-y-2">
+                                <p><strong>選項 A:</strong> OpenAI API Key → <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:underline">取得金鑰</a></p>
+                                <p><strong>選項 B (推薦):</strong> Google Gemini API → <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">取得金鑰</a></p>
+                                <p class="text-sm italic">💡 Gemini 有免費額度，適合學習使用</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <p class="font-bold text-gray-800 mb-2">
+                            <i class="fas fa-info-circle"></i> 驗證 Python 安裝
+                        </p>
+                        <div class="code-block">
+python --version<br>
+pip --version
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">應該顯示 Python 3.12.x 和 pip 版本</p>
+                    </div>
+                </div>
+
+                <!-- Slide 3: Project Structure -->
+                <div id="slide-3" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-folder-tree text-green-600"></i> 步驟 1：建立專案結構
+                    </h2>
+                    <p class="mb-6">首先，我們要建立一個完整的專案目錄結構。這是整個系統的骨架！</p>
+
+                    <h3 class="text-xl font-bold mb-3">📂 完整目錄結構：</h3>
+                    <div class="bg-gray-900 text-green-400 p-4 rounded-lg mb-6 font-mono text-sm overflow-x-auto">
+<pre>AI_Prompt_Generator/
+├── app.py                      # Flask 主應用
+├── config.py                   # 配置管理
+├── requirements.txt            # 依賴套件
+├── .env.example               # 環境變數範本
+├── .gitignore                 # Git 忽略檔案
+├── README.md                  # 專案說明
+├── src/                       # 後端核心模組
+│   ├── __init__.py
+│   ├── models/               # 資料模型
+│   │   ├── __init__.py
+│   │   ├── prompt.py
+│   │   ├── rag_document.py
+│   │   ├── generation_history.py
+│   │   └── user_config.py
+│   ├── services/            # 核心服務
+│   │   ├── __init__.py
+│   │   ├── ai_service.py
+│   │   ├── rag_service.py
+│   │   └── prompt_builder.py
+│   └── utils/               # 工具模組
+│       ├── __init__.py
+│       ├── db_manager.py
+│       └── validators.py
+├── templates/               # HTML 模板
+│   ├── base.html
+│   ├── index.html
+│   ├── generator.html
+│   ├── library.html
+│   ├── history.html
+│   └── settings.html
+├── static/                 # 靜態資源
+│   ├── css/
+│   │   └── main.css
+│   ├── js/
+│   │   ├── app.js
+│   │   └── generator.js
+│   └── images/
+├── data/                   # 資料儲存
+│   ├── uploads/
+│   ├── vector_store/
+│   └── prompts.db
+├── logs/                   # 日誌
+└── tests/                  # 測試</pre>
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3 mt-6">💻 執行以下命令建立目錄：</h3>
+                    <p class="mb-2"><span class="file-name"><i class="fas fa-terminal"></i> Windows 命令</span></p>
+                    <div class="code-block mb-4">
+mkdir AI_Prompt_Generator<br>
+cd AI_Prompt_Generator<br>
+mkdir src src\models src\services src\utils templates static static\css static\js static\images data data\uploads data\vector_store logs tests<br>
+type nul > app.py<br>
+type nul > config.py<br>
+type nul > requirements.txt
+                    </div>
+
+                    <p class="mb-2"><span class="file-name"><i class="fab fa-linux"></i> Mac/Linux 命令</span></p>
+                    <div class="code-block">
+mkdir -p AI_Prompt_Generator/{src/{models,services,utils},templates,static/{css,js,images},data/{uploads,vector_store},logs,tests}<br>
+cd AI_Prompt_Generator<br>
+touch app.py config.py requirements.txt
+                    </div>
+
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mt-6">
+                        <p class="font-bold text-green-800"><i class="fas fa-check-circle"></i> 完成！</p>
+                        <p class="text-green-700">你現在已經建立了完整的專案骨架，接下來我們將逐步填入程式碼。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 4: requirements.txt -->
+                <div id="slide-4" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-box text-blue-600"></i> 步驟 2：定義依賴套件
+                    </h2>
+                    <p class="mb-6">建立 <code class="bg-gray-200 px-2 py-1 rounded">requirements.txt</code> 檔案，列出所有需要的 Python 套件。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 requirements.txt</span></p>
+                    <div class="code-block mb-4" style="max-height: 400px; overflow-y: auto;">
+# Web 框架<br>
+Flask==3.0.0<br>
+Flask-CORS==4.0.0<br>
+<br>
+# AI 服務<br>
+openai==1.12.0<br>
+google-generativeai==0.3.2<br>
+<br>
+# 向量資料庫與嵌入<br>
+chromadb==0.4.22<br>
+sentence-transformers==2.3.1<br>
+<br>
+# 資料處理<br>
+pandas==2.1.4<br>
+numpy==1.26.3<br>
+<br>
+# 文件處理<br>
+PyPDF2==3.0.1<br>
+python-docx==1.1.0<br>
+markdown==3.5.1<br>
+<br>
+# 資料庫<br>
+SQLAlchemy==2.0.25<br>
+<br>
+# 工具<br>
+python-dotenv==1.0.0<br>
+requests==2.31.0<br>
+validators==0.22.0<br>
+<br>
+# 開發工具<br>
+pytest==7.4.3
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-4">
+                        <h3 class="font-bold text-blue-800 mb-2"><i class="fas fa-lightbulb"></i> 套件說明：</h3>
+                        <ul class="text-blue-700 space-y-1 text-sm">
+                            <li><strong>Flask</strong> - Web 框架核心</li>
+                            <li><strong>openai / google-generativeai</strong> - AI 服務 SDK</li>
+                            <li><strong>chromadb / sentence-transformers</strong> - RAG 向量搜尋</li>
+                            <li><strong>SQLAlchemy</strong> - 資料庫 ORM</li>
+                            <li><strong>python-dotenv</strong> - 環境變數管理</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3 mt-6">📦 安裝所有套件：</h3>
+                    <div class="code-block mb-4">
+pip install -r requirements.txt
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-yellow-800"><i class="fas fa-clock"></i> 安裝時間</p>
+                        <p class="text-yellow-700">這個步驟可能需要 5-10 分鐘，請耐心等候。如果網路較慢，可以先繼續閱讀下一步。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 5: config.py -->
+                <div id="slide-5" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-cog text-purple-600"></i> 步驟 3：建立配置管理 (config.py)
+                    </h2>
+                    <p class="mb-6">配置檔案負責管理所有系統設定，包括 API 金鑰、資料庫路徑等。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 config.py</span></p>
+                    <div class="code-block mb-4" style="max-height: 400px; overflow-y: auto;">
+<span style="color: #94a3b8"># AI Prompt Generator Platform - 配置管理模組</span><br>
+<br>
+<span style="color: #38bdf8">import</span> os<br>
+<span style="color: #38bdf8">from</span> pathlib <span style="color: #38bdf8">import</span> Path<br>
+<span style="color: #38bdf8">from</span> dotenv <span style="color: #38bdf8">import</span> load_dotenv<br>
+<br>
+<span style="color: #94a3b8"># 載入 .env 檔案</span><br>
+load_dotenv()<br>
+<br>
+<span style="color: #94a3b8"># 基礎路徑</span><br>
+BASE_DIR = Path(__file__).parent<br>
+DATA_DIR = BASE_DIR / <span style="color: #fbbf24">"data"</span><br>
+LOGS_DIR = BASE_DIR / <span style="color: #fbbf24">"logs"</span><br>
+<br>
+<span style="color: #94a3b8"># 確保目錄存在</span><br>
+DATA_DIR.mkdir(exist_ok=<span style="color: #38bdf8">True</span>)<br>
+LOGS_DIR.mkdir(exist_ok=<span style="color: #38bdf8">True</span>)<br>
+<br>
+<br>
+<span style="color: #38bdf8">class</span> <span style="color: #fbbf24">Config</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""應用配置類"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># Flask 配置</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;SECRET_KEY = os.getenv(<span style="color: #fbbf24">'SECRET_KEY'</span>, <span style="color: #fbbf24">'dev-secret-key'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;DEBUG = os.getenv(<span style="color: #fbbf24">'FLASK_DEBUG'</span>, <span style="color: #fbbf24">'True'</span>).lower() == <span style="color: #fbbf24">'true'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;PORT = <span style="color: #38bdf8">int</span>(os.getenv(<span style="color: #fbbf24">'PORT'</span>, <span style="color: #a78bfa">5001</span>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># AI 服務配置</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;OPENAI_API_KEY = os.getenv(<span style="color: #fbbf24">'OPENAI_API_KEY'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;GOOGLE_AI_API_KEY = os.getenv(<span style="color: #fbbf24">'GOOGLE_AI_API_KEY'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;DEFAULT_AI_PROVIDER = os.getenv(<span style="color: #fbbf24">'DEFAULT_AI_PROVIDER'</span>, <span style="color: #fbbf24">'gemini'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># 資料庫配置</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;DATABASE_URL = os.getenv(<span style="color: #fbbf24">'DATABASE_URL'</span>, <span style="color: #fbbf24">f'sqlite:///{DATA_DIR}/prompts.db'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># RAG 配置</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;ENABLE_RAG = os.getenv(<span style="color: #fbbf24">'ENABLE_RAG'</span>, <span style="color: #fbbf24">'true'</span>).lower() == <span style="color: #fbbf24">'true'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;CHROMA_PERSIST_DIRECTORY = <span style="color: #38bdf8">str</span>(DATA_DIR / <span style="color: #fbbf24">"vector_store"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># 日誌配置</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;LOG_FILE = <span style="color: #38bdf8">str</span>(LOGS_DIR / <span style="color: #fbbf24">'app.log'</span>)<br>
+<br>
+<br>
+<span style="color: #94a3b8"># 建立配置實例</span><br>
+config = Config()
+                    </div>
+
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mt-4">
+                        <h3 class="font-bold text-purple-800 mb-2"><i class="fas fa-key"></i> 關鍵功能：</h3>
+                        <ul class="text-purple-700 space-y-1 text-sm">
+                            <li>✅ 從環境變數載入敏感資訊（API Key）</li>
+                            <li>✅ 自動建立必要的目錄結構</li>
+                            <li>✅ 提供預設值確保系統可運行</li>
+                            <li>✅ 統一管理所有配置參數</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 6: .env.example -->
+                <div id="slide-6" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-shield-alt text-red-600"></i> 步驟 4：建立環境變數範本
+                    </h2>
+                    <p class="mb-6">建立 <code class="bg-gray-200 px-2 py-1 rounded">.env.example</code> 作為範本，並建立實際的 <code class="bg-gray-200 px-2 py-1 rounded">.env</code> 檔案。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 .env.example</span></p>
+                    <div class="code-block mb-4" style="max-height: 350px; overflow-y: auto;">
+<span style="color: #94a3b8"># Flask 應用配置</span><br>
+FLASK_DEBUG=True<br>
+SECRET_KEY=your-secret-key-change-this<br>
+PORT=5001<br>
+<br>
+<span style="color: #94a3b8"># AI 服務配置（至少配置其中一個）</span><br>
+<span style="color: #94a3b8"># OpenAI API (https://platform.openai.com/api-keys)</span><br>
+OPENAI_API_KEY=sk-proj-xxxxx<br>
+<br>
+<span style="color: #94a3b8"># Google Gemini API (https://aistudio.google.com/app/apikey)</span><br>
+GOOGLE_AI_API_KEY=AIzaSyxxxxx<br>
+<br>
+<span style="color: #94a3b8"># 預設使用哪個 AI 服務</span><br>
+DEFAULT_AI_PROVIDER=gemini<br>
+<br>
+<span style="color: #94a3b8"># RAG 知識庫配置</span><br>
+ENABLE_RAG=true<br>
+<br>
+<span style="color: #94a3b8"># 資料庫配置</span><br>
+DATABASE_URL=sqlite:///./data/prompts.db
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3 mt-6">🔐 建立你的 .env 檔案：</h3>
+                    <div class="space-y-3 mb-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="font-bold text-blue-800 mb-2">Windows:</p>
+                            <div class="code-block">copy .env.example .env</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="font-bold text-green-800 mb-2">Mac/Linux:</p>
+                            <div class="code-block">cp .env.example .env</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-red-800 mb-2"><i class="fas fa-exclamation-triangle"></i> 重要提醒：</p>
+                        <ul class="text-red-700 space-y-1 text-sm">
+                            <li>📝 編輯 <code>.env</code> 檔案，填入你的實際 API Key</li>
+                            <li>🔒 絕對不要將 <code>.env</code> 檔案上傳到 Git</li>
+                            <li>✅ 至少需要配置一個 AI 服務（OpenAI 或 Gemini）</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 7: app.py Part 1 -->
+                <div id="slide-7" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-server text-green-600"></i> 步驟 5：建立 Flask 主應用 (app.py - 1/2)
+                    </h2>
+                    <p class="mb-6">這是系統的心臟！我們將建立 Flask 應用程式和所有 API 路由。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 app.py (第一部分)</span></p>
+                    <div class="code-block mb-4" style="max-height: 400px; overflow-y: auto;">
+<span style="color: #94a3b8">"""AI Prompt Generator Platform - Flask 主應用"""</span><br>
+<br>
+<span style="color: #38bdf8">import</span> os<br>
+<span style="color: #38bdf8">import</span> logging<br>
+<span style="color: #38bdf8">from</span> flask <span style="color: #38bdf8">import</span> Flask, render_template, jsonify, request<br>
+<span style="color: #38bdf8">from</span> flask_cors <span style="color: #38bdf8">import</span> CORS<br>
+<span style="color: #38bdf8">from</span> datetime <span style="color: #38bdf8">import</span> datetime<br>
+<br>
+<span style="color: #94a3b8"># 導入配置</span><br>
+<span style="color: #38bdf8">from</span> config <span style="color: #38bdf8">import</span> config<br>
+<br>
+<span style="color: #94a3b8"># 設定日誌</span><br>
+logging.basicConfig(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;level=logging.INFO,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;format=<span style="color: #fbbf24">'%(asctime)s - %(name)s - %(levelname)s - %(message)s'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;handlers=[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logging.FileHandler(config.LOG_FILE, encoding=<span style="color: #fbbf24">'utf-8'</span>),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logging.StreamHandler()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;]<br>
+)<br>
+logger = logging.getLogger(__name__)<br>
+<br>
+<span style="color: #94a3b8"># 建立 Flask 應用</span><br>
+app = Flask(__name__)<br>
+app.config[<span style="color: #fbbf24">'SECRET_KEY'</span>] = config.SECRET_KEY<br>
+<br>
+<span style="color: #94a3b8"># 啟用 CORS</span><br>
+CORS(app, resources={<span style="color: #fbbf24">r"/api/*"</span>: {<span style="color: #fbbf24">"origins"</span>: <span style="color: #fbbf24">"*"</span>}})<br>
+<br>
+<br>
+<span style="color: #38bdf8">@app.route</span>(<span style="color: #fbbf24">'/'</span>)<br>
+<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">index</span>():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""首頁"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> render_template(<span style="color: #fbbf24">'index.html'</span>)<br>
+<br>
+<br>
+<span style="color: #38bdf8">@app.route</span>(<span style="color: #fbbf24">'/api/health'</span>, methods=[<span style="color: #fbbf24">'GET'</span>])<br>
+<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">health_check</span>():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""健康檢查"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> jsonify({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'status'</span>: <span style="color: #fbbf24">'healthy'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'service'</span>: <span style="color: #fbbf24">'AI Prompt Generator Platform'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'version'</span>: <span style="color: #fbbf24">'1.0.0'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;})<br>
+<br>
+<br>
+<span style="color: #38bdf8">if</span> __name__ == <span style="color: #fbbf24">'__main__'</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">f"正在啟動 AI Prompt Generator Platform..."</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">f"伺服器位址: http://localhost:{config.PORT}"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;app.run(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;host=<span style="color: #fbbf24">'0.0.0.0'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;port=config.PORT,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug=config.DEBUG<br>
+&nbsp;&nbsp;&nbsp;&nbsp;)
+                    </div>
+
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mt-4">
+                        <p class="font-bold text-green-800 mb-2"><i class="fas fa-info-circle"></i> 這個階段實作了：</p>
+                        <ul class="text-green-700 space-y-1 text-sm">
+                            <li>✅ Flask 應用初始化</li>
+                            <li>✅ 日誌系統設定</li>
+                            <li>✅ CORS 跨域支援</li>
+                            <li>✅ 基本路由 (首頁 + 健康檢查)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 8: Basic HTML Template -->
+                <div id="slide-8" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-window-maximize text-blue-600"></i> 步驟 6：建立基礎 HTML 模板
+                    </h2>
+                    <p class="mb-6">建立一個簡單的首頁，讓我們可以測試系統是否正常運行。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 templates/index.html</span></p>
+                    <div class="code-block mb-4" style="max-height: 400px; overflow-y: auto;">
+<span style="color: #94a3b8">&lt;!-- templates/index.html --&gt;</span><br>
+<span style="color: #38bdf8">&lt;!DOCTYPE html&gt;</span><br>
+<span style="color: #fbbf24">&lt;html</span> <span style="color: #a78bfa">lang=</span><span style="color: #10b981">"zh-Hant"</span><span style="color: #fbbf24">&gt;</span><br>
+<span style="color: #fbbf24">&lt;head&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;meta</span> <span style="color: #a78bfa">charset=</span><span style="color: #10b981">"UTF-8"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;meta</span> <span style="color: #a78bfa">name=</span><span style="color: #10b981">"viewport"</span> <span style="color: #a78bfa">content=</span><span style="color: #10b981">"width=device-width, initial-scale=1.0"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;title&gt;</span>AI Prompt Generator Platform<span style="color: #fbbf24">&lt;/title&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;script</span> <span style="color: #a78bfa">src=</span><span style="color: #10b981">"https://cdn.tailwindcss.com"</span><span style="color: #fbbf24">&gt;&lt;/script&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;link</span> <span style="color: #a78bfa">href=</span><span style="color: #10b981">"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"</span> <span style="color: #a78bfa">rel=</span><span style="color: #10b981">"stylesheet"</span><span style="color: #fbbf24">&gt;</span><br>
+<span style="color: #fbbf24">&lt;/head&gt;</span><br>
+<span style="color: #fbbf24">&lt;body</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"bg-gradient-to-br from-purple-100 to-blue-100 min-h-screen"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;div</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"container mx-auto px-4 py-16"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;div</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-center mb-12"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;i</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"fas fa-magic text-6xl text-purple-600 mb-6"</span><span style="color: #fbbf24">&gt;&lt;/i&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;h1</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-5xl font-bold text-gray-800 mb-4"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AI Prompt Generator Platform<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/h1&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;p</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-xl text-gray-600"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;智能提示詞生成系統 - 讓 AI 幫你寫出更好的提示詞<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/p&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/div&gt;</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;div</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;h2</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-2xl font-bold mb-6 text-green-600"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;i</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"fas fa-check-circle"</span><span style="color: #fbbf24">&gt;&lt;/i&gt;</span> 系統運行中！<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/h2&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;p</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-gray-700 mb-4"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;恭喜！你的 AI Prompt Generator 已成功啟動。<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/p&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;div</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"bg-blue-50 p-4 rounded-lg"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;p</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-sm text-gray-600"</span><span style="color: #fbbf24">&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;健康檢查: <span style="color: #fbbf24">&lt;a</span> <span style="color: #a78bfa">href=</span><span style="color: #10b981">"/api/health"</span> <span style="color: #a78bfa">class=</span><span style="color: #10b981">"text-blue-600"</span><span style="color: #fbbf24">&gt;</span>/api/health<span style="color: #fbbf24">&lt;/a&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/p&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/div&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/div&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">&lt;/div&gt;</span><br>
+<span style="color: #fbbf24">&lt;/body&gt;</span><br>
+<span style="color: #fbbf24">&lt;/html&gt;</span>
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3 mt-6">🚀 現在可以測試系統了！</h3>
+                    <div class="space-y-3">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="font-bold text-green-800 mb-2">1. 啟動應用程式：</p>
+                            <div class="code-block">python app.py</div>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="font-bold text-blue-800 mb-2">2. 開啟瀏覽器訪問：</p>
+                            <div class="code-block">http://localhost:5001</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg mt-4">
+                        <p class="font-bold text-yellow-800"><i class="fas fa-lightbulb"></i> 里程碑達成！</p>
+                        <p class="text-yellow-700">你已經建立了一個可運行的 Flask Web 應用程式！接下來我們將加入更多功能。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 9: AI Service Overview -->
+                <div id="slide-9" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-brain text-purple-600"></i> 步驟 7：整合 AI 服務 (概念說明)
+                    </h2>
+                    <p class="mb-6">接下來我們要實作最核心的功能 - AI 服務整合！</p>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-green-50 to-teal-50 p-6 rounded-xl border-2 border-green-200">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-brain text-5xl text-green-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-green-800 mb-3">OpenAI GPT</h3>
+                            <ul class="text-green-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check"></i> GPT-4 強大能力</li>
+                                <li><i class="fas fa-check"></i> 高品質輸出</li>
+                                <li><i class="fas fa-check"></i> 豐富 API 功能</li>
+                                <li><i class="fas fa-dollar-sign"></i> 按使用量計費</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl border-2 border-purple-200">
+                            <div class="text-center mb-4">
+                                <i class="fab fa-google text-5xl text-purple-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-purple-800 mb-3">Google Gemini</h3>
+                            <ul class="text-purple-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check"></i> Gemini 2.5 Flash</li>
+                                <li><i class="fas fa-check"></i> 快速回應</li>
+                                <li><i class="fas fa-check"></i> 免費額度充足</li>
+                                <li><i class="fas fa-gift"></i> 推薦新手使用</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-r-lg mb-6">
+                        <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-code"></i> 我們要實作的 AI 服務功能：</h3>
+                        <div class="grid md:grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white p-3 rounded">
+                                <p class="font-bold text-gray-800">1. 生成提示詞</p>
+                                <p class="text-gray-600">根據需求自動生成客製化提示詞</p>
+                            </div>
+                            <div class="bg-white p-3 rounded">
+                                <p class="font-bold text-gray-800">2. 優化提示詞</p>
+                                <p class="text-gray-600">分析並改進現有提示詞</p>
+                            </div>
+                            <div class="bg-white p-3 rounded">
+                                <p class="font-bold text-gray-800">3. 質量評分</p>
+                                <p class="text-gray-600">評估提示詞的品質</p>
+                            </div>
+                            <div class="bg-white p-3 rounded">
+                                <p class="font-bold text-gray-800">4. 文本嵌入</p>
+                                <p class="text-gray-600">為 RAG 系統提供向量化</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-100 to-pink-100 p-6 rounded-xl">
+                        <p class="text-center text-lg font-bold text-purple-800 mb-2">
+                            <i class="fas fa-magic"></i> 架構設計
+                        </p>
+                        <p class="text-center text-purple-700">
+                            我們將建立一個統一的 <code class="bg-white px-2 py-1 rounded">AIService</code> 類別，<br>
+                            內部可以靈活切換不同的 AI 提供商
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Slide 10: AI Service Implementation -->
+                <div id="slide-10" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-code text-blue-600"></i> 步驟 8：實作 AI 服務類別
+                    </h2>
+                    <p class="mb-6">建立 <code class="bg-gray-200 px-2 py-1 rounded">src/services/ai_service.py</code> - AI 服務的核心！</p>
+
+                    <p class="mb-2"><span class="file-name">📄 src/services/ai_service.py (簡化版)</span></p>
+                    <div class="code-block mb-4" style="max-height: 400px; overflow-y: auto;">
+<span style="color: #94a3b8">"""AI 服務統一接口"""</span><br>
+<br>
+<span style="color: #38bdf8">import</span> logging<br>
+<span style="color: #38bdf8">import</span> openai<br>
+<span style="color: #38bdf8">import</span> google.generativeai <span style="color: #38bdf8">as</span> genai<br>
+<span style="color: #38bdf8">from</span> config <span style="color: #38bdf8">import</span> config<br>
+<br>
+logger = logging.getLogger(__name__)<br>
+<br>
+<br>
+<span style="color: #38bdf8">class</span> <span style="color: #fbbf24">AIService</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""AI 服務管理器"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">__init__</span>(<span style="color: #a78bfa">self</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># 初始化 OpenAI</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">if</span> config.OPENAI_API_KEY:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;openai.api_key = config.OPENAI_API_KEY<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa">self</span>.openai_client = openai<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">"OpenAI 服務已初始化"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8"># 初始化 Gemini</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">if</span> config.GOOGLE_AI_API_KEY:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;genai.configure(api_key=config.GOOGLE_AI_API_KEY)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa">self</span>.gemini_model = genai.GenerativeModel(<span style="color: #fbbf24">'gemini-2.0-flash-exp'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">"Gemini 服務已初始化"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">generate_prompt</span>(<span style="color: #a78bfa">self</span>, requirements, provider=<span style="color: #10b981">None</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""生成提示詞"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt = <span style="color: #a78bfa">self</span>._build_generation_prompt(requirements)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">if</span> provider == <span style="color: #fbbf24">'gemini'</span> <span style="color: #38bdf8">and</span> <span style="color: #a78bfa">self</span>.gemini_model:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response = <span style="color: #a78bfa">self</span>.gemini_model.generate_content(prompt)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> response.text<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">else</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> <span style="color: #fbbf24">"請在 .env 配置 AI API Key"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">_build_generation_prompt</span>(<span style="color: #a78bfa">self</span>, requirements):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""建構生成提示詞的 prompt"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> <span style="color: #fbbf24">f"""請生成一個提示詞：<br>
+專案類型: {requirements.get('project_type', '未指定')}<br>
+主要功能: {', '.join(requirements.get('features', []))}<br>
+詳細程度: {requirements.get('detail_level', '中等')}<br>
+"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">is_available</span>(<span style="color: #a78bfa">self</span>, provider=<span style="color: #10b981">None</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8">"""檢查 AI 服務是否可用"""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">if</span> provider == <span style="color: #fbbf24">'gemini'</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> <span style="color: #38bdf8">hasattr</span>(<span style="color: #a78bfa">self</span>, <span style="color: #fbbf24">'gemini_model'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> <span style="color: #10b981">False</span>
+                    </div>
+
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mt-4">
+                        <p class="font-bold text-purple-800 mb-2"><i class="fas fa-info-circle"></i> 程式碼說明：</p>
+                        <ul class="text-purple-700 space-y-1 text-sm">
+                            <li>✅ <strong>__init__</strong> - 初始化時自動連接可用的 AI 服務</li>
+                            <li>✅ <strong>generate_prompt</strong> - 根據需求生成提示詞</li>
+                            <li>✅ <strong>_build_generation_prompt</strong> - 建構發送給 AI 的 prompt</li>
+                            <li>✅ <strong>is_available</strong> - 檢查服務是否可用</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg mt-4">
+                        <p class="font-bold text-yellow-800"><i class="fas fa-lightbulb"></i> 提示</p>
+                        <p class="text-yellow-700">這是簡化版本！完整版本會包含錯誤處理、重試機制、優化功能等。你可以在 GitHub 找到完整程式碼。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 11: Testing -->
+                <div id="slide-11" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-flask text-green-600"></i> 步驟 9：測試 AI 功能
+                    </h2>
+                    <p class="mb-6">現在讓我們測試剛剛建立的 AI 服務！</p>
+
+                    <h3 class="text-xl font-bold mb-3">1️⃣ 在 app.py 中加入測試路由：</h3>
+                    <p class="mb-2"><span class="file-name">📄 app.py (新增)</span></p>
+                    <div class="code-block mb-6">
+<span style="color: #94a3b8"># 在 app.py 加入以下程式碼</span><br>
+<span style="color: #38bdf8">from</span> src.services.ai_service <span style="color: #38bdf8">import</span> AIService<br>
+<br>
+<span style="color: #94a3b8"># 初始化 AI 服務</span><br>
+ai_service = AIService()<br>
+<br>
+<span style="color: #38bdf8">@app.route</span>(<span style="color: #fbbf24">'/api/generate'</span>, methods=[<span style="color: #fbbf24">'POST'</span>])<br>
+<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">generate_prompt</span>():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data = request.json<br>
+&nbsp;&nbsp;&nbsp;&nbsp;result = ai_service.generate_prompt(data, provider=<span style="color: #fbbf24">'gemini'</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> jsonify({<span style="color: #fbbf24">'success'</span>: <span style="color: #10b981">True</span>, <span style="color: #fbbf24">'content'</span>: result})
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3">2️⃣ 使用 curl 測試 API：</h3>
+                    <div class="code-block mb-6" style="font-size: 0.75rem;">
+curl -X POST http://localhost:5001/api/generate \<br>
+&nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+&nbsp;&nbsp;-d '{"project_type": "web_app", "features": ["api", "database"], "detail_level": "detailed"}'
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-3">3️⃣ 預期回應：</h3>
+                    <div class="code-block mb-6">
+{<br>
+&nbsp;&nbsp;<span style="color: #fbbf24">"success"</span>: <span style="color: #10b981">true</span>,<br>
+&nbsp;&nbsp;<span style="color: #fbbf24">"content"</span>: <span style="color: #fbbf24">"# Web 應用程式開發提示詞\n\n## 專案概述\n..."</span><br>
+}
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                            <p class="font-bold text-green-800 mb-2"><i class="fas fa-check-circle"></i> 成功！</p>
+                            <p class="text-green-700 text-sm">如果你看到 AI 生成的提示詞，恭喜！核心功能已經運作了。</p>
+                        </div>
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                            <p class="font-bold text-red-800 mb-2"><i class="fas fa-times-circle"></i> 失敗？</p>
+                            <p class="text-red-700 text-sm">檢查 .env 檔案中的 API Key 是否正確配置。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 12: RAG System Overview -->
+                <div id="slide-12" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-database text-blue-600"></i> 步驟 10：RAG 知識庫系統 (概念)
+                    </h2>
+                    <p class="mb-6">RAG (Retrieval-Augmented Generation) 是提升 AI 回答準確度的關鍵技術！</p>
+
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl mb-6">
+                        <h3 class="text-2xl font-bold text-blue-800 mb-4">🧠 什麼是 RAG？</h3>
+                        <p class="text-blue-700 mb-4">
+                            RAG 結合了<strong>檢索 (Retrieval)</strong> 和 <strong>生成 (Generation)</strong>，
+                            讓 AI 在回答問題前，先從你的知識庫中找出相關資訊。
+                        </p>
+                        <div class="bg-white p-4 rounded-lg">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1">
+                                    <div class="bg-purple-100 p-3 rounded text-center">
+                                        <i class="fas fa-file-alt text-2xl text-purple-600"></i>
+                                        <p class="text-sm font-bold mt-2">上傳文件</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-arrow-right text-2xl text-gray-400"></i>
+                                <div class="flex-1">
+                                    <div class="bg-blue-100 p-3 rounded text-center">
+                                        <i class="fas fa-vector-square text-2xl text-blue-600"></i>
+                                        <p class="text-sm font-bold mt-2">向量化</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-arrow-right text-2xl text-gray-400"></i>
+                                <div class="flex-1">
+                                    <div class="bg-green-100 p-3 rounded text-center">
+                                        <i class="fas fa-search text-2xl text-green-600"></i>
+                                        <p class="text-sm font-bold mt-2">語義搜尋</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-arrow-right text-2xl text-gray-400"></i>
+                                <div class="flex-1">
+                                    <div class="bg-yellow-100 p-3 rounded text-center">
+                                        <i class="fas fa-magic text-2xl text-yellow-600"></i>
+                                        <p class="text-sm font-bold mt-2">AI 生成</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4 mb-6">
+                        <div class="bg-white p-5 rounded-lg shadow-md">
+                            <h4 class="font-bold text-lg mb-3 text-blue-800">
+                                <i class="fas fa-toolbox"></i> 使用的技術
+                            </h4>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li><i class="fas fa-check text-green-500"></i> <strong>ChromaDB</strong> - 向量資料庫</li>
+                                <li><i class="fas fa-check text-green-500"></i> <strong>Sentence Transformers</strong> - 文本嵌入</li>
+                                <li><i class="fas fa-check text-green-500"></i> <strong>語義相似度搜尋</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-lg shadow-md">
+                            <h4 class="font-bold text-lg mb-3 text-purple-800">
+                                <i class="fas fa-star"></i> 實際應用
+                            </h4>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li><i class="fas fa-lightbulb text-yellow-500"></i> 從範本庫找相似提示詞</li>
+                                <li><i class="fas fa-lightbulb text-yellow-500"></i> 上傳 PDF/Word 文件分析</li>
+                                <li><i class="fas fa-lightbulb text-yellow-500"></i> 自動推薦相關內容</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-yellow-800"><i class="fas fa-info-circle"></i> 好消息！</p>
+                        <p class="text-yellow-700">RAG 系統的實作較為複雜，涉及向量嵌入和相似度計算。完整程式碼已經為你準備好了，你可以直接從 GitHub 下載使用。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 13: Database Models -->
+                <div id="slide-13" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-table text-indigo-600"></i> 步驟 11：建立資料庫模型
+                    </h2>
+                    <p class="mb-6">使用 SQLAlchemy ORM 定義資料表結構。</p>
+
+                    <p class="mb-2"><span class="file-name">📄 src/models/prompt.py</span></p>
+                    <div class="code-block mb-4" style="max-height: 350px; overflow-y: auto;">
+<span style="color: #94a3b8">"""提示詞模型"""</span><br>
+<br>
+<span style="color: #38bdf8">from</span> sqlalchemy <span style="color: #38bdf8">import</span> Column, Integer, String, Text, DateTime<br>
+<span style="color: #38bdf8">from</span> sqlalchemy.ext.declarative <span style="color: #38bdf8">import</span> declarative_base<br>
+<span style="color: #38bdf8">from</span> datetime <span style="color: #38bdf8">import</span> datetime<br>
+<br>
+Base = declarative_base()<br>
+<br>
+<br>
+<span style="color: #38bdf8">class</span> <span style="color: #fbbf24">Prompt</span>(Base):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;__tablename__ = <span style="color: #fbbf24">'prompts'</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;id = Column(Integer, primary_key=<span style="color: #10b981">True</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;title = Column(String(<span style="color: #a78bfa">200</span>), nullable=<span style="color: #10b981">False</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;content = Column(Text, nullable=<span style="color: #10b981">False</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;project_type = Column(String(<span style="color: #a78bfa">50</span>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;created_at = Column(DateTime, default=datetime.now)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">to_dict</span>(<span style="color: #a78bfa">self</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'id'</span>: <span style="color: #a78bfa">self</span>.id,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'title'</span>: <span style="color: #a78bfa">self</span>.title,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'content'</span>: <span style="color: #a78bfa">self</span>.content,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'project_type'</span>: <span style="color: #a78bfa">self</span>.project_type,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #fbbf24">'created_at'</span>: <span style="color: #a78bfa">self</span>.created_at.isoformat()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+                    </div>
+
+                    <p class="mb-2 mt-6"><span class="file-name">📄 src/utils/db_manager.py</span></p>
+                    <div class="code-block mb-4" style="max-height: 300px; overflow-y: auto;">
+<span style="color: #94a3b8">"""資料庫管理工具"""</span><br>
+<br>
+<span style="color: #38bdf8">from</span> sqlalchemy <span style="color: #38bdf8">import</span> create_engine<br>
+<span style="color: #38bdf8">from</span> sqlalchemy.orm <span style="color: #38bdf8">import</span> sessionmaker<br>
+<span style="color: #38bdf8">import</span> logging<br>
+<br>
+logger = logging.getLogger(__name__)<br>
+<br>
+<br>
+<span style="color: #38bdf8">class</span> <span style="color: #fbbf24">DatabaseManager</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">__init__</span>(<span style="color: #a78bfa">self</span>, database_url):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa">self</span>.engine = create_engine(database_url)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa">self</span>.Session = sessionmaker(bind=<span style="color: #a78bfa">self</span>.engine)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">f"資料庫已連接"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">create_tables</span>(<span style="color: #a78bfa">self</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">from</span> src.models.prompt <span style="color: #38bdf8">import</span> Base<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Base.metadata.create_all(<span style="color: #a78bfa">self</span>.engine)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.info(<span style="color: #fbbf24">"資料表建立完成"</span>)<br>
+<br>
+<br>
+<span style="color: #38bdf8">def</span> <span style="color: #fbbf24">init_db</span>(database_url):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;db = DatabaseManager(database_url)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;db.create_tables()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8">return</span> db
+                    </div>
+
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-lg mt-4">
+                        <p class="font-bold text-indigo-800 mb-2"><i class="fas fa-database"></i> 資料庫功能：</p>
+                        <ul class="text-indigo-700 space-y-1 text-sm">
+                            <li>✅ 自動建立資料表</li>
+                            <li>✅ ORM 模型映射</li>
+                            <li>✅ 支援 CRUD 操作</li>
+                            <li>✅ 日期時間自動管理</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 14: Frontend Interface -->
+                <div id="slide-14" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-desktop text-cyan-600"></i> 步驟 12：前端互動界面
+                    </h2>
+                    <p class="mb-6">建立美觀的用戶界面，讓使用者可以輕鬆操作系統。</p>
+
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-purple-100 to-purple-200 p-5 rounded-xl text-center">
+                            <i class="fas fa-magic text-4xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold text-lg mb-2">生成器</h4>
+                            <p class="text-sm text-gray-700">互動式問卷<br>生成提示詞</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-100 to-blue-200 p-5 rounded-xl text-center">
+                            <i class="fas fa-book text-4xl text-blue-600 mb-3"></i>
+                            <h4 class="font-bold text-lg mb-2">知識庫</h4>
+                            <p class="text-sm text-gray-700">RAG 文件管理<br>語義搜尋</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-100 to-green-200 p-5 rounded-xl text-center">
+                            <i class="fas fa-history text-4xl text-green-600 mb-3"></i>
+                            <h4 class="font-bold text-lg mb-2">歷史記錄</h4>
+                            <p class="text-sm text-gray-700">查看過往<br>生成結果</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-100 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">
+                            <i class="fas fa-paint-brush"></i> 使用的前端技術：
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-blue-600 mb-2">
+                                    <i class="fab fa-css3-alt"></i> Tailwind CSS
+                                </p>
+                                <p class="text-sm text-gray-600">快速建立美觀的響應式介面</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-yellow-600 mb-2">
+                                    <i class="fab fa-js"></i> Vanilla JavaScript
+                                </p>
+                                <p class="text-sm text-gray-600">處理 API 請求與互動邏輯</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-green-600 mb-2">
+                                    <i class="fas fa-file-code"></i> Jinja2 Templates
+                                </p>
+                                <p class="text-sm text-gray-600">Flask 模板引擎</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-purple-600 mb-2">
+                                    <i class="fas fa-icons"></i> Font Awesome
+                                </p>
+                                <p class="text-sm text-gray-600">豐富的圖示庫</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-cyan-800 mb-2"><i class="fas fa-code"></i> 前端檔案結構：</p>
+                        <ul class="text-cyan-700 space-y-1 text-sm font-mono">
+                            <li>📁 templates/ - HTML 模板 (6 個頁面)</li>
+                            <li>📁 static/css/main.css - 自訂樣式</li>
+                            <li>📁 static/js/app.js - 通用 JavaScript</li>
+                            <li>📁 static/js/generator.js - 生成器邏輯</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 15: Deployment -->
+                <div id="slide-15" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-rocket text-red-600"></i> 步驟 13：部署與優化
+                    </h2>
+                    <p class="mb-6">完成開發後，讓我們看看如何部署和優化你的應用程式！</p>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold mb-4 text-blue-800">
+                                <i class="fas fa-server"></i> 本機開發
+                            </h3>
+                            <div class="space-y-3">
+                                <div class="bg-blue-50 p-3 rounded">
+                                    <p class="font-bold text-sm mb-1">啟動開發伺服器：</p>
+                                    <code class="text-xs">python app.py</code>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded">
+                                    <p class="font-bold text-sm mb-1">訪問網址：</p>
+                                    <code class="text-xs">http://localhost:5001</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold mb-4 text-green-800">
+                                <i class="fas fa-cloud"></i> 生產環境
+                            </h3>
+                            <ul class="space-y-2 text-sm">
+                                <li><i class="fas fa-check text-green-500"></i> 使用 Gunicorn/uWSGI</li>
+                                <li><i class="fas fa-check text-green-500"></i> Nginx 反向代理</li>
+                                <li><i class="fas fa-check text-green-500"></i> Docker 容器化</li>
+                                <li><i class="fas fa-check text-green-500"></i> 雲端部署 (AWS/GCP)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-100 to-pink-100 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-purple-800">
+                            <i class="fas fa-tools"></i> 效能優化建議
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-bold text-sm mb-2 text-purple-700">後端優化：</h4>
+                                <ul class="text-sm text-purple-600 space-y-1">
+                                    <li>• 實作 Redis 快取</li>
+                                    <li>• 非同步 AI 請求</li>
+                                    <li>• 資料庫連接池</li>
+                                    <li>• API 速率限制</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-2 text-pink-700">前端優化：</h4>
+                                <ul class="text-sm text-pink-600 space-y-1">
+                                    <li>• 靜態資源壓縮</li>
+                                    <li>• 圖片懶加載</li>
+                                    <li>• Service Worker</li>
+                                    <li>• CDN 加速</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-yellow-800 mb-2"><i class="fas fa-shield-alt"></i> 安全性提醒：</p>
+                        <ul class="text-yellow-700 space-y-1 text-sm">
+                            <li>✅ 絕不將 API Key 提交到版本控制</li>
+                            <li>✅ 使用 HTTPS 加密傳輸</li>
+                            <li>✅ 實作使用者認證</li>
+                            <li>✅ 定期更新依賴套件</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Slide 16: Features Showcase -->
+                <div id="slide-16" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-star text-yellow-500"></i> 你的平台能做什麼？
+                    </h2>
+                    <p class="mb-6">讓我們回顧一下你剛剛建立的強大功能！</p>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border-2 border-purple-200">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-robot text-5xl text-purple-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-purple-800 mb-3">AI 智能生成</h3>
+                            <ul class="text-purple-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check-circle text-green-500"></i> 根據需求自動生成提示詞</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 支援多種專案類型</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 可調整詳細程度</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> OpenAI + Gemini 雙引擎</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-search text-5xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-blue-800 mb-3">RAG 知識庫</h3>
+                            <ul class="text-blue-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check-circle text-green-500"></i> 上傳文件自動向量化</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 語義搜尋相似內容</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 支援 PDF/Word/Markdown</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 智能推薦範本</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-chart-line text-5xl text-green-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-green-800 mb-3">提示詞優化</h3>
+                            <ul class="text-green-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check-circle text-green-500"></i> AI 自動分析提示詞</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 提供改進建議</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 質量評分系統</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 優點/缺點分析</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border-2 border-orange-200">
+                            <div class="text-center mb-4">
+                                <i class="fas fa-history text-5xl text-orange-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-orange-800 mb-3">完整管理</h3>
+                            <ul class="text-orange-700 space-y-2 text-sm">
+                                <li><i class="fas fa-check-circle text-green-500"></i> 歷史記錄查詢</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 匯出為 Markdown</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> 一鍵複製功能</li>
+                                <li><i class="fas fa-check-circle text-green-500"></i> Google Sheets 同步</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-xl text-center">
+                        <i class="fas fa-trophy text-5xl mb-4"></i>
+                        <p class="text-2xl font-bold mb-2">你已經掌握了專業級 AI 應用開發！</p>
+                        <p class="text-lg opacity-90">這個平台可以作為你未來專案的基礎架構</p>
+                    </div>
+                </div>
+
+                <!-- Slide 17: Next Steps -->
+                <div id="slide-17" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-road text-blue-600"></i> 接下來可以做什麼？
+                    </h2>
+                    <p class="mb-6">恭喜完成教學！以下是一些進階擴展方向：</p>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold mb-4 text-purple-800">
+                                <i class="fas fa-plus-circle"></i> 功能擴展
+                            </h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start">
+                                    <i class="fas fa-code-branch text-green-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">提示詞版本控制</p>
+                                        <p class="text-gray-600">追蹤修改歷史，支援版本回滾</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-users text-blue-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">多使用者系統</p>
+                                        <p class="text-gray-600">實作帳號登入和權限管理</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-comments text-yellow-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">評論與評分</p>
+                                        <p class="text-gray-600">社群互動功能</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold mb-4 text-green-800">
+                                <i class="fas fa-rocket"></i> 技術優化
+                            </h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start">
+                                    <i class="fab fa-docker text-blue-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">Docker 容器化</p>
+                                        <p class="text-gray-600">簡化部署流程</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-database text-orange-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">升級到 PostgreSQL</p>
+                                        <p class="text-gray-600">提升生產環境效能</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-bolt text-yellow-500 mt-1 mr-2"></i>
+                                    <div>
+                                        <p class="font-bold">Redis 快取</p>
+                                        <p class="text-gray-600">加速 API 回應</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-blue-100 to-cyan-100 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-bold mb-4 text-blue-800">
+                            <i class="fas fa-book"></i> 延伸學習資源
+                        </h3>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <a href="https://flask.palletsprojects.com/" target="_blank" class="bg-white p-4 rounded-lg hover:shadow-lg transition-shadow">
+                                <p class="font-bold text-blue-600 mb-1">Flask 官方文件</p>
+                                <p class="text-xs text-gray-600">深入學習 Flask 框架</p>
+                            </a>
+                            <a href="https://platform.openai.com/docs" target="_blank" class="bg-white p-4 rounded-lg hover:shadow-lg transition-shadow">
+                                <p class="font-bold text-green-600 mb-1">OpenAI API 文件</p>
+                                <p class="text-xs text-gray-600">探索更多 AI 功能</p>
+                            </a>
+                            <a href="https://www.trychroma.com/" target="_blank" class="bg-white p-4 rounded-lg hover:shadow-lg transition-shadow">
+                                <p class="font-bold text-purple-600 mb-1">ChromaDB 文件</p>
+                                <p class="text-xs text-gray-600">精通向量資料庫</p>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                        <p class="font-bold text-yellow-800 mb-2"><i class="fas fa-lightbulb"></i> 實戰建議：</p>
+                        <p class="text-yellow-700">從小功能開始擴展，逐步添加新特性。每完成一個功能就測試一次，確保系統穩定運行。</p>
+                    </div>
+                </div>
+
+                <!-- Slide 18: Conclusion -->
+                <div id="slide-18" class="slide">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+                        <i class="fas fa-flag-checkered text-green-600"></i> 恭喜！你完成了完整教學
+                    </h2>
+
+                    <div class="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl mb-6 border-2 border-green-200">
+                        <div class="text-center mb-6">
+                            <i class="fas fa-trophy text-7xl text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-center text-gray-800 mb-4">
+                            你已經學會了：
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-purple-600 mb-2">✅ Flask Web 開發</p>
+                                <p class="text-sm text-gray-600">從零建立完整的 Web 應用</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-blue-600 mb-2">✅ AI 服務整合</p>
+                                <p class="text-sm text-gray-600">OpenAI 與 Gemini API 運用</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-green-600 mb-2">✅ RAG 系統實作</p>
+                                <p class="text-sm text-gray-600">向量資料庫與語義搜尋</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-orange-600 mb-2">✅ 資料庫設計</p>
+                                <p class="text-sm text-gray-600">SQLAlchemy ORM 操作</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-pink-600 mb-2">✅ 前端介面設計</p>
+                                <p class="text-sm text-gray-600">Tailwind CSS + JavaScript</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg">
+                                <p class="font-bold text-indigo-600 mb-2">✅ 系統架構規劃</p>
+                                <p class="text-sm text-gray-600">模組化與可擴展設計</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 rounded-2xl text-center mb-6">
+                        <i class="fas fa-star text-5xl mb-4"></i>
+                        <p class="text-2xl font-bold mb-3">現在你擁有一個專業級的 AI 平台！</p>
+                        <p class="text-lg opacity-90 mb-4">這不僅是一個學習專案，更是你未來開發的基石</p>
+                        <div class="flex justify-center gap-4 flex-wrap">
+                            <span class="bg-white/20 px-4 py-2 rounded-full">完整架構</span>
+                            <span class="bg-white/20 px-4 py-2 rounded-full">可擴展設計</span>
+                            <span class="bg-white/20 px-4 py-2 rounded-full">生產可用</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-6 rounded-xl mb-6">
+                        <h3 class="text-xl font-bold text-blue-800 mb-3 text-center">
+                            <i class="fas fa-share-alt"></i> 分享你的成果
+                        </h3>
+                        <p class="text-center text-blue-700 mb-4">
+                            將你的專案上傳到 GitHub，與世界分享你的學習成果！
+                        </p>
+                    </div>
+
+                    <div class="text-center">
+                        <p class="text-gray-600 mb-2">感謝你跟著教學一步步完成</p>
+                        <p class="text-lg font-bold text-gray-800">建置人：曾慶良 (阿亮老師)</p>
+                        <div class="flex justify-center space-x-4 mt-4">
+                            <a href="https://www.facebook.com/iddmail" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                <i class="fab fa-facebook-f text-2xl"></i>
+                            </a>
+                            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="text-red-600 hover:text-red-800">
+                                <i class="fab fa-youtube text-2xl"></i>
+                            </a>
+                            <a href="https://thisnote.space/" target="_blank" class="text-green-600 hover:text-green-800">
+                                <i class="fas fa-robot text-2xl"></i>
+                            </a>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-6">
+                            © 2025 AI Prompt Generator Platform | 非經允許，不得節錄，轉載要註明出處
+                        </p>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Navigation Buttons -->
+            <footer class="flex justify-between items-center mt-8">
+                <button id="prev-btn" class="bg-white/80 hover:bg-white text-purple-800 font-bold py-3 px-6 rounded-full transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-arrow-left"></i> 上一步
+                </button>
+                <div id="slide-counter" class="text-white font-bold text-lg bg-black/30 px-6 py-2 rounded-full"></div>
+                <button id="next-btn" class="bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold py-3 px-6 rounded-full transition-all shadow-lg">
+                    下一步 <i class="fas fa-arrow-right"></i>
+                </button>
+            </footer>
+
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let currentSlide = 1;
+
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const slideCounter = document.getElementById('slide-counter');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Create progress bar indicators
+        for (let i = 0; i < totalSlides; i++) {
+            const step = document.createElement('div');
+            step.className = 'step-indicator w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer text-sm';
+            step.textContent = i + 1;
+            step.dataset.slide = i + 1;
+            progressBar.appendChild(step);
+            step.addEventListener('click', () => {
+                currentSlide = i + 1;
+                showSlide(currentSlide);
+            });
+        }
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+
+        function showSlide(slideNumber) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            const newSlide = document.getElementById(`slide-${slideNumber}`);
+            if (newSlide) {
+                newSlide.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            updateNavigation();
+        }
+
+        function updateNavigation() {
+            prevBtn.disabled = currentSlide === 1;
+            nextBtn.disabled = currentSlide === totalSlides;
+            if (currentSlide === totalSlides) {
+                nextBtn.innerHTML = '完成教學 <i class="fas fa-check"></i>';
+            } else {
+                nextBtn.innerHTML = '下一步 <i class="fas fa-arrow-right"></i>';
+            }
+
+            slideCounter.textContent = `第 ${currentSlide} / ${totalSlides} 步`;
+
+            stepIndicators.forEach((indicator, index) => {
+                const slideNum = index + 1;
+                indicator.classList.remove('active', 'completed');
+                if (slideNum < currentSlide) {
+                    indicator.classList.add('completed');
+                } else if (slideNum === currentSlide) {
+                    indicator.classList.add('active');
+                }
+            });
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 1) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentSlide > 1) {
+                currentSlide--;
+                showSlide(currentSlide);
+            } else if (e.key === 'ArrowRight' && currentSlide < totalSlides) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        });
+
+        // Initial setup
+        showSlide(currentSlide);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虛擬環境
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 環境變數
+.env
+.env.local
+.env.*.local
+
+# 資料庫
+*.db
+*.sqlite
+*.sqlite3
+data/prompts.db
+data/vector_store/
+
+# 日誌
+logs/
+*.log
+
+# 上傳檔案
+data/uploads/*
+!data/uploads/.gitkeep
+
+# Google Credentials
+credentials/
+*.json
+!package.json
+
+# 測試
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 暫存檔案
+*.tmp
+*.bak
+*.swp
+.cache/
+
+# 書籍內容（販售內容，禁止上傳）
+book/
+*.docx
+*.md
+!README.md
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini

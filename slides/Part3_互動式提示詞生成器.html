@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 3 - 互動式提示詞生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+        .nav-bar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; z-index: 10000;
+        }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white; padding: 6px 16px; border-radius: 20px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s ease;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); }
+        .slide-container { width: 100%; height: 100vh; padding-top: 60px; }
+        .slide {
+            position: absolute; top: 60px; left: 0; width: 100%;
+            height: calc(100vh - 60px); display: none;
+            align-items: center; justify-content: center; padding: 40px;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        .slide.active { display: flex; opacity: 1; }
+        .content-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px; padding: 50px;
+            max-width: 1200px; width: 95%; max-height: 85vh; overflow-y: auto;
+        }
+        h1 { color: #667eea; font-size: 48px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #667eea; font-size: 36px; margin-bottom: 30px; border-bottom: 3px solid #764ba2; padding-bottom: 12px; }
+        h3 { color: #667eea; font-size: 24px; margin: 25px 0 15px 0; }
+        p, li { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; }
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; font-size: 14px; }
+        .box { padding: 20px; border-radius: 12px; margin: 20px 0; border-left: 5px solid; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .highlight { background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin: 25px 0; }
+        .card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; }
+        .card:hover { transform: translateY(-5px); border-color: #764ba2; transition: all 0.3s; }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: 700; color: #667eea; margin-bottom: 10px; }
+        .nav-arrow {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.25); color: white;
+            width: 50px; height: 50px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            font-size: 20px; cursor: pointer; z-index: 9000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .prev-arrow { left: 20px; }
+        .next-arrow { right: 20px; }
+        .indicators {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 4000;
+            padding: 10px 20px; background: rgba(0,0,0,0.3); border-radius: 25px;
+        }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #764ba2; transform: scale(1.3); }
+        .screenshot { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-title">Part 3 - 互動式提示詞生成器</div>
+        <div class="nav-buttons">
+            <a href="Part2_專案架構與服務設計.html" class="nav-btn">◀ 上一Part</a>
+            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Part4_RAG知識庫功能.html" class="nav-btn">下一Part ▶</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+        <div class="slide active">
+            <div class="content-card" style="text-align: center;">
+                <h4 style="color: #764ba2; margin-bottom: 10px;">CH5 AI Prompt 互動提示詞生成系統</h4>
+                <h1>Part 3：互動式提示詞生成器</h1>
+                <p style="font-size: 24px; color: #666; margin: 30px 0;">問卷設計邏輯、模板系統與 AI 智能生成實作</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+                    <span class="highlight">問卷設計</span>
+                    <span class="highlight">PromptBuilder</span>
+                    <span class="highlight">AI 統一接口</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📋 為什麼用問卷式介面？</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">❌</div>
+                        <div class="card-title">傳統自由輸入的問題</div>
+                        <ul>
+                            <li>使用者不知道該描述到什麼程度</li>
+                            <li>新手可能遺漏重要資訊</li>
+                            <li>自由文字難以結構化處理</li>
+                            <li>需要複雜的自然語言理解</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">問卷式設計的優勢</div>
+                        <ul>
+                            <li><strong>確保完整性</strong>：每個問題對應重要面向</li>
+                            <li><strong>降低認知負擔</strong>：選擇比填空容易</li>
+                            <li><strong>便於處理</strong>：結構化資料直接映射</li>
+                            <li><strong>引導使用者</strong>：逐步完善需求</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📝 問卷選項設計</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>1. 專案類型</h3>
+                        <ul>
+                            <li>Web 應用程式</li>
+                            <li>命令列工具</li>
+                            <li>API 服務</li>
+                            <li>資料分析專案</li>
+                            <li>教學專案</li>
+                        </ul>
+                        <h3>2. 功能需求（多選）</h3>
+                        <ul>
+                            <li>Web 界面、API 後端</li>
+                            <li>資料庫、AI 整合</li>
+                            <li>測試程式碼、部署指南</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>3. 詳細程度</h3>
+                        <ul>
+                            <li><strong>基礎</strong>：簡要說明</li>
+                            <li><strong>中等</strong>：包含範例</li>
+                            <li><strong>詳細</strong>：完整實作指導</li>
+                            <li><strong>超詳細</strong>：教學級別</li>
+                        </ul>
+                        <h3>4. 語言 & 平台</h3>
+                        <ul>
+                            <li>繁體中文 / 簡體中文 / 英文</li>
+                            <li>跨平台 / Windows / Linux / macOS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🏗️ PromptBuilder 模板系統</h2>
+                <pre><code>PROJECT_TYPES = {
+    'web_app': {
+        'name': 'Web 應用程式',
+        'tech_stack': ['HTML', 'CSS', 'JavaScript', 'Backend Framework'],
+        'sections': ['UI/UX 設計', '前端實作', '後端 API', '資料庫設計', '部署']
+    },
+    'cli_tool': {
+        'name': '命令列工具',
+        'tech_stack': ['Python/Node.js', 'argparse/commander'],
+        'sections': ['指令設計', '參數處理', '輸出格式', '錯誤處理']
+    }
+}
+
+DETAIL_LEVELS = {
+    'basic': {'depth': 1, 'include_examples': False},
+    'intermediate': {'depth': 2, 'include_examples': True},
+    'detailed': {'depth': 3, 'include_examples': True},
+    'comprehensive': {'depth': 4, 'include_examples': True}
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔄 模板生成流程</h2>
+                <div style="text-align: center;">
+                    <div style="display: inline-block; background: #e3f2fd; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>_build_header()</strong><br>建立標題與元資訊
+                    </div>
+                    <span style="font-size: 24px;">→</span>
+                    <div style="display: inline-block; background: #fff3cd; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>_build_overview()</strong><br>專案概述與功能列表
+                    </div>
+                    <span style="font-size: 24px;">→</span>
+                    <div style="display: inline-block; background: #d4edda; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>_build_tech_requirements()</strong><br>技術棧建議
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <div style="display: inline-block; background: #f8d7da; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>_build_features()</strong><br>功能規格詳述
+                    </div>
+                    <span style="font-size: 24px;">→</span>
+                    <div style="display: inline-block; background: #d1ecf1; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>_build_footer()</strong><br>期望產出說明
+                    </div>
+                    <span style="font-size: 24px;">→</span>
+                    <div style="display: inline-block; background: #667eea; color: white; padding: 15px 30px; border-radius: 12px; margin: 10px;">
+                        <strong>完整提示詞</strong><br>Markdown 格式
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🤖 AIService 統一接口</h2>
+                <pre><code>class AIService:
+    def generate_prompt(self, requirements: Dict, provider: str) -> str:
+        """生成提示詞 - 統一接口"""
+        prompt = self._build_generation_prompt(requirements)
+
+        if provider == 'openai' and self.openai_client:
+            return self._generate_with_openai(prompt)
+        elif provider == 'gemini' and self.gemini_model:
+            return self._generate_with_gemini(prompt)
+
+    def optimize_prompt(self, original: str, provider: str) -> Dict:
+        """優化提示詞 - 返回優化版本與建議"""
+        optimization_prompt = f"""
+        分析以下提示詞的品質，提供：
+        1. 優化後的版本
+        2. 具體改進建議
+
+        原始提示詞：
+        {original}
+        """
+        # 呼叫 AI 進行分析...</code></pre>
+                <div class="box info">
+                    <strong>設計優勢</strong>：統一接口讓切換 AI 服務只需一行程式碼，呼叫方無需關心底層差異
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>⚡ AI 優化功能</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>優化流程</h3>
+                        <ol>
+                            <li>使用者點擊「優化」按鈕</li>
+                            <li>發送請求到 <code>/api/optimize</code></li>
+                            <li>AIService 分析原始提示詞</li>
+                            <li>返回優化版本與改進建議</li>
+                            <li>前端展示比對結果</li>
+                        </ol>
+                        <h3>優化面向</h3>
+                        <ul>
+                            <li>結構清晰度</li>
+                            <li>需求完整性</li>
+                            <li>技術可行性</li>
+                            <li>表達精確度</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <img src="../截圖/ch5_optimize_result.png" alt="優化結果" class="screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📌 本節重點回顧</h2>
+                <div class="grid-2">
+                    <div class="card" style="background: #d4edda;">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">技術要點</div>
+                        <ul>
+                            <li>問卷式介面降低使用門檻</li>
+                            <li>樹狀模板結構支援靈活組合</li>
+                            <li>AIService 統一抽象多種 API</li>
+                            <li>優化功能持續提升品質</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background: #e3f2fd;">
+                        <div class="card-icon">💡</div>
+                        <div class="card-title">設計思維</div>
+                        <ul>
+                            <li>引導比自由輸入更有效</li>
+                            <li>結構化資料易於處理</li>
+                            <li>抽象層隔離底層差異</li>
+                            <li>備用方案確保可靠性</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicators"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() {
+            const container = document.getElementById('indicators');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(i);
+                container.appendChild(dot);
+            }
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'ArrowRight') changeSlide(1);
+            });
+        }
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+        function changeSlide(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(index) { showSlide(index); }
+        init();
+    </script>
+</body>
+</html>

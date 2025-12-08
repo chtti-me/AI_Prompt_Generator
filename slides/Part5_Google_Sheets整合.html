@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 5 - Google Sheets 整合</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh; overflow: hidden; color: #333;
+        }
+        .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; z-index: 10000; }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); }
+        .slide { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; padding: 40px; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: flex; opacity: 1; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 24px; padding: 50px; max-width: 1200px; width: 95%; max-height: 85vh; overflow-y: auto; }
+        h1 { color: #4facfe; font-size: 48px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #4facfe; font-size: 36px; margin-bottom: 30px; border-bottom: 3px solid #00f2fe; padding-bottom: 12px; }
+        h3 { color: #4facfe; font-size: 24px; margin: 25px 0 15px 0; }
+        p, li { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; }
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; font-size: 14px; }
+        .box { padding: 20px; border-radius: 12px; margin: 20px 0; border-left: 5px solid; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        .warning { background: #fff3cd; border-color: #ffc107; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .highlight { background: linear-gradient(120deg, #4facfe 0%, #00f2fe 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: white; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin: 25px 0; }
+        .card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; }
+        .card:hover { transform: translateY(-5px); border-color: #4facfe; transition: all 0.3s; }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: 700; color: #4facfe; margin-bottom: 10px; }
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); color: white; width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); font-size: 20px; cursor: pointer; z-index: 9000; display: flex; align-items: center; justify-content: center; }
+        .prev-arrow { left: 20px; }
+        .next-arrow { right: 20px; }
+        .indicators { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 4000; padding: 10px 20px; background: rgba(0,0,0,0.3); border-radius: 25px; }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #00f2fe; transform: scale(1.3); }
+        .screenshot { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 20px 0; }
+        .step { display: flex; align-items: flex-start; gap: 20px; margin: 20px 0; }
+        .step-number { width: 40px; height: 40px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+        .step-content { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-title">Part 5 - Google Sheets 整合</div>
+        <div class="nav-buttons">
+            <a href="Part4_RAG知識庫功能.html" class="nav-btn">◀ 上一Part</a>
+            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Part6_疑難排解與效能優化.html" class="nav-btn">下一Part ▶</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+        <div class="slide active">
+            <div class="content-card" style="text-align: center;">
+                <h4 style="color: #00f2fe; margin-bottom: 10px;">CH5 AI Prompt 互動提示詞生成系統</h4>
+                <h1>Part 5：Google Sheets 整合</h1>
+                <p style="font-size: 24px; color: #666; margin: 30px 0;">Service Account 設定、Apps Script 與團隊協作</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+                    <span class="highlight">Service Account</span>
+                    <span class="highlight">Apps Script</span>
+                    <span class="highlight">團隊協作</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2">☁️ 為什麼整合 Google Sheets？</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">👥</div>
+                        <div class="card-title">團隊協作</div>
+                        <ul>
+                            <li>多人共同維護提示詞庫</li>
+                            <li>即時查看與評論</li>
+                            <li>版本歷史追蹤</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">資料管理</div>
+                        <ul>
+                            <li>結構化儲存提示詞</li>
+                            <li>分類與標籤管理</li>
+                            <li>評分與使用統計</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔄</div>
+                        <div class="card-title">自動同步</div>
+                        <ul>
+                            <li>Flask 應用自動上傳</li>
+                            <li>定時同步更新</li>
+                            <li>雙向資料同步</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📤</div>
+                        <div class="card-title">匯出報告</div>
+                        <ul>
+                            <li>匯出 CSV/Excel</li>
+                            <li>建立視覺化儀表板</li>
+                            <li>趨勢分析</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔐 Service Account 設定流程</h2>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>建立 Service Account</h3>
+                        <p>進入 Google Cloud Console → API 和服務 → 憑證 → 建立憑證 → 服務帳戶</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>啟用 Google Sheets API</h3>
+                        <p>在「API 和服務」頁面搜尋並啟用「Google Sheets API」</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>下載 JSON 金鑰</h3>
+                        <p>在服務帳戶詳情頁 → 金鑰 → 新增金鑰 → JSON 格式</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>分享 Sheet 給服務帳戶</h3>
+                        <p>將服務帳戶 email 加入 Sheet 的編輯者權限</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>⚙️ 環境配置</h2>
+                <pre><code># .env 檔案配置
+GOOGLE_SHEETS_ENABLED=true
+GOOGLE_SERVICE_ACCOUNT_FILE=./credentials/service_account.json
+PROMPTS_SHEET_ID=1ABC...xyz  # 從 Sheet URL 複製
+AUTO_SYNC_TO_SHEETS=false
+SYNC_INTERVAL_MINUTES=30</code></pre>
+                <div class="grid-2">
+                    <div>
+                        <img src="../截圖/ch5_service_account.png" alt="服務帳戶" class="screenshot">
+                    </div>
+                    <div>
+                        <img src="../截圖/ch5_sheet_sharing.png" alt="Sheet 分享" class="screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📜 Google Apps Script 功能</h2>
+                <pre><code>// 建立自訂選單
+function onOpen() {
+    SpreadsheetApp.getUi()
+        .createMenu('🤖 AI Prompt')
+        .addItem('同步提示詞', 'syncPromptsFromPlatform')
+        .addItem('刷新統計', 'refreshAnalytics')
+        .addItem('設定定時同步', 'createHourlyTrigger')
+        .addToUi();
+}
+
+// 同步提示詞
+function syncPromptsFromPlatform() {
+    const response = UrlFetchApp.fetch(CONFIG.API_BASE_URL + '/prompts');
+    const prompts = JSON.parse(response.getContentText());
+    // 寫入工作表...
+}</code></pre>
+                <p style="text-align: center;">
+                    <img src="../截圖/ch5_gas_menu.png" alt="GAS 選單" class="screenshot" style="max-width: 400px;">
+                </p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>👥 團隊協作應用場景</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">⭐</div>
+                        <div class="card-title">範本評審</div>
+                        <p>團隊成員查看、評論、評分提示詞，高分範本標記為推薦</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🏷️</div>
+                        <div class="card-title">分類管理</div>
+                        <p>為提示詞分類（前端、後端、數據分析），統計各分類數量</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📈</div>
+                        <div class="card-title">使用追蹤</div>
+                        <p>記錄每個提示詞的使用次數，分析熱門範本</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📜</div>
+                        <div class="card-title">版本歷史</div>
+                        <p>Google Sheets 自動保存編輯歷史，可回復之前版本</p>
+                    </div>
+                </div>
+                <p style="text-align: center;">
+                    <img src="../截圖/ch5_sheets_collaboration.png" alt="團隊協作" class="screenshot" style="max-width: 700px;">
+                </p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📌 本節重點回顧</h2>
+                <div class="grid-2">
+                    <div class="card" style="background: #d4edda;">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">技術要點</div>
+                        <ul>
+                            <li>Service Account 認證機制</li>
+                            <li>Google Sheets API 整合</li>
+                            <li>Apps Script 自動化</li>
+                            <li>定時同步觸發器</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background: #e3f2fd;">
+                        <div class="card-icon">💡</div>
+                        <div class="card-title">協作價值</div>
+                        <ul>
+                            <li>提示詞成為團隊共享資產</li>
+                            <li>知識經驗被保存與傳承</li>
+                            <li>持續評估與改進</li>
+                            <li>形成最佳實踐</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicators"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() {
+            const container = document.getElementById('indicators');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(i);
+                container.appendChild(dot);
+            }
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'ArrowRight') changeSlide(1);
+            });
+        }
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+        function changeSlide(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(index) { showSlide(index); }
+        init();
+    </script>
+</body>
+</html>

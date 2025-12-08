@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}提示詞生成器 - AI Prompt Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <!-- 生成器表單 -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-wand-magic-sparkles"></i> 提示詞生成器
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="generator-form">
+                    <!-- 專案類型 -->
+                    <div class="mb-3">
+                        <label class="form-label">專案類型</label>
+                        <select class="form-select" id="project-type" required>
+                            <option value="web_app">Web 應用程式</option>
+                            <option value="cli_tool">命令列工具</option>
+                            <option value="api_service">API 服務</option>
+                            <option value="data_analysis">資料分析</option>
+                            <option value="tutorial">教學專案</option>
+                        </select>
+                    </div>
+
+                    <!-- 功能選擇 -->
+                    <div class="mb-3">
+                        <label class="form-label">功能需求</label>
+                        <div id="features-checkboxes">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="web_ui" id="feat-ui">
+                                <label class="form-check-label" for="feat-ui">Web 界面</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="api" id="feat-api">
+                                <label class="form-check-label" for="feat-api">API 後端</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="database" id="feat-db">
+                                <label class="form-check-label" for="feat-db">資料庫</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="ai_integration" id="feat-ai">
+                                <label class="form-check-label" for="feat-ai">AI 整合</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="testing" id="feat-test">
+                                <label class="form-check-label" for="feat-test">測試程式碼</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="deployment" id="feat-deploy">
+                                <label class="form-check-label" for="feat-deploy">部署指南</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 詳細程度 -->
+                    <div class="mb-3">
+                        <label class="form-label">詳細程度</label>
+                        <select class="form-select" id="detail-level" required>
+                            <option value="basic">基礎 - 簡要說明</option>
+                            <option value="intermediate" selected>中等 - 包含範例</option>
+                            <option value="detailed">詳細 - 完整實作</option>
+                            <option value="ultra_detailed">超詳細 - 教學級別</option>
+                        </select>
+                    </div>
+
+                    <!-- 語言 -->
+                    <div class="mb-3">
+                        <label class="form-label">語言</label>
+                        <select class="form-select" id="language" required>
+                            <option value="zh_tw" selected>繁體中文</option>
+                            <option value="zh_cn">簡體中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <!-- 目標平台 -->
+                    <div class="mb-3">
+                        <label class="form-label">目標平台</label>
+                        <select class="form-select" id="target-platform" required>
+                            <option value="cross_platform" selected>跨平台</option>
+                            <option value="windows">Windows</option>
+                            <option value="macos">macOS</option>
+                            <option value="linux">Linux</option>
+                            <option value="web">Web</option>
+                            <option value="mobile">Mobile</option>
+                        </select>
+                    </div>
+
+                    <!-- 需求描述 -->
+                    <div class="mb-3">
+                        <label class="form-label">需求描述</label>
+                        <textarea class="form-control" id="additional-requirements" rows="3" placeholder="描述你想要建立的專案或功能..."></textarea>
+                    </div>
+
+                    <!-- AI 生成選項 -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="use-ai">
+                            <label class="form-check-label" for="use-ai">
+                                使用 AI 智能生成
+                            </label>
+                        </div>
+                        <small class="text-muted">關閉時使用模板生成</small>
+                    </div>
+
+                    <!-- AI Provider -->
+                    <div class="mb-3" id="ai-provider-section" style="display:none;">
+                        <label class="form-label">AI 服務</label>
+                        <select class="form-select" id="ai-provider">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="openai">OpenAI GPT</option>
+                        </select>
+                    </div>
+
+                    <!-- 生成按鈕 -->
+                    <button type="submit" class="btn btn-primary w-100" id="generate-btn">
+                        <i class="fas fa-magic"></i> 生成提示詞
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- 生成結果 -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt"></i> 生成結果
+                </h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="copy-btn" disabled>
+                        <i class="fas fa-copy"></i> 複製
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="download-btn" disabled>
+                        <i class="fas fa-download"></i> 下載
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" id="optimize-btn" disabled>
+                        <i class="fas fa-wand-sparkles"></i> 優化
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 載入中 -->
+                <div id="loading-spinner" style="display:none;" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">生成中...</span>
+                    </div>
+                    <p class="mt-3 text-muted">AI 正在生成提示詞，請稍候...</p>
+                </div>
+
+                <!-- 初始狀態 -->
+                <div id="initial-message" class="text-center py-5 text-muted">
+                    <i class="fas fa-arrow-left fa-3x mb-3"></i>
+                    <p>請填寫左側表單，然後點擊「生成提示詞」按鈕</p>
+                </div>
+
+                <!-- 結果顯示 -->
+                <div id="result-container" style="display:none;">
+                    <!-- Markdown 渲染區域 -->
+                    <div id="result-preview" class="markdown-body"></div>
+
+                    <!-- 原始文本（隱藏） -->
+                    <textarea id="result-raw" style="display:none;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 優化建議（如果有） -->
+        <div id="optimization-suggestions" style="display:none;" class="mt-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> 優化建議
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul id="suggestions-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/generator.js') }}"></script>
+{% endblock %}

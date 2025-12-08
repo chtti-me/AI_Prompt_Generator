@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 2 - 專案架構與服務設計</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+        .nav-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 10000;
+        }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+        .slide-container { width: 100%; height: 100vh; padding-top: 60px; position: relative; }
+        .slide {
+            position: absolute;
+            top: 60px; left: 0;
+            width: 100%;
+            height: calc(100vh - 60px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .slide.active { display: flex; opacity: 1; }
+        .content-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 50px;
+            max-width: 1200px;
+            width: 95%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        h1 { color: #11998e; font-size: 48px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #11998e; font-size: 36px; margin-bottom: 30px; border-bottom: 3px solid #38ef7d; padding-bottom: 12px; }
+        h3 { color: #11998e; font-size: 24px; margin: 25px 0 15px 0; }
+        p, li { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+        ul, ol { padding-left: 30px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; }
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; font-size: 14px; line-height: 1.6; }
+        .box { padding: 20px; border-radius: 12px; margin: 20px 0; border-left: 5px solid; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .highlight { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin: 25px 0; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 25px 0; }
+        .card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; }
+        .card:hover { transform: translateY(-5px); border-color: #38ef7d; transition: all 0.3s; }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: 700; color: #11998e; margin-bottom: 10px; }
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.25);
+            color: white;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-arrow:hover { background: rgba(255,255,255,0.5); }
+        .prev-arrow { left: 20px; }
+        .next-arrow { right: 20px; }
+        .indicators {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 4000;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 25px;
+        }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #38ef7d; transform: scale(1.3); }
+        .tree { font-family: monospace; background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        .tree-line { margin: 5px 0; }
+        .folder { color: #11998e; font-weight: bold; }
+        .file { color: #666; }
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            h1 { font-size: 32px; }
+            h2 { font-size: 26px; }
+            .content-card { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-title">Part 2 - 專案架構與服務設計</div>
+        <div class="nav-buttons">
+            <a href="Part1_系統介紹與快速開始.html" class="nav-btn">◀ 上一Part</a>
+            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Part3_互動式提示詞生成器.html" class="nav-btn">下一Part ▶</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="content-card" style="text-align: center;">
+                <h4 style="color: #38ef7d; margin-bottom: 10px;">CH5 AI Prompt 互動提示詞生成系統</h4>
+                <h1>Part 2：專案架構與服務設計</h1>
+                <p style="font-size: 24px; color: #666; margin: 30px 0;">深入了解 Flask 應用的分層架構與核心模組</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+                    <span class="highlight">Flask MVC</span>
+                    <span class="highlight">服務分層</span>
+                    <span class="highlight">資料流向</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 專案目錄結構 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📁 專案目錄結構</h2>
+                <div class="grid-2">
+                    <div class="tree">
+                        <div class="tree-line"><span class="folder">CH5_AI_Prompt_Generator/</span></div>
+                        <div class="tree-line">├── <span class="file">app.py</span> # Flask 應用入口</div>
+                        <div class="tree-line">├── <span class="file">config.py</span> # 配置管理</div>
+                        <div class="tree-line">├── <span class="folder">src/</span></div>
+                        <div class="tree-line">│   ├── <span class="folder">services/</span> # 服務層</div>
+                        <div class="tree-line">│   │   ├── <span class="file">ai_service.py</span></div>
+                        <div class="tree-line">│   │   ├── <span class="file">rag_service.py</span></div>
+                        <div class="tree-line">│   │   └── <span class="file">prompt_builder.py</span></div>
+                        <div class="tree-line">│   ├── <span class="folder">models/</span> # 資料模型</div>
+                        <div class="tree-line">│   └── <span class="folder">utils/</span> # 工具函數</div>
+                        <div class="tree-line">├── <span class="folder">templates/</span> # Jinja2 模板</div>
+                        <div class="tree-line">├── <span class="folder">static/</span> # CSS/JS 靜態檔</div>
+                        <div class="tree-line">├── <span class="folder">data/</span> # 資料儲存</div>
+                        <div class="tree-line">└── <span class="folder">gas/</span> # Google Apps Script</div>
+                    </div>
+                    <div>
+                        <h3>設計原則</h3>
+                        <ul>
+                            <li><strong>分層架構</strong>：路由、服務、資料分離</li>
+                            <li><strong>模組化</strong>：功能獨立，易於維護</li>
+                            <li><strong>配置驅動</strong>：透過 .env 控制行為</li>
+                            <li><strong>可擴展</strong>：預留擴展空間</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 核心服務模組 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔧 核心服務模組設計</h2>
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">🤖</div>
+                        <div class="card-title">AIService</div>
+                        <p>統一抽象 OpenAI 和 Gemini API</p>
+                        <ul>
+                            <li>智能生成提示詞</li>
+                            <li>優化分析功能</li>
+                            <li>錯誤處理與重試</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📚</div>
+                        <div class="card-title">RAGService</div>
+                        <p>管理知識庫所有操作</p>
+                        <ul>
+                            <li>文件上傳與解析</li>
+                            <li>向量嵌入與儲存</li>
+                            <li>語義檢索</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📝</div>
+                        <div class="card-title">PromptBuilder</div>
+                        <p>模板生成引擎</p>
+                        <ul>
+                            <li>樹狀模板結構</li>
+                            <li>變數替換</li>
+                            <li>多語言支援</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 配置管理 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>⚙️ 配置管理 (config.py)</h2>
+                <pre><code>class Config:
+    # Flask 配置
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+    DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+
+    # AI 服務配置
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    GOOGLE_AI_API_KEY = os.getenv('GOOGLE_AI_API_KEY')
+    AI_PROVIDER = os.getenv('AI_PROVIDER', 'both')
+
+    # RAG 配置
+    VECTOR_DB_TYPE = os.getenv('VECTOR_DB_TYPE', 'chromadb')
+    EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', 'sentence-transformers')
+
+    # Google Sheets 整合
+    GOOGLE_SHEETS_ENABLED = os.getenv('GOOGLE_SHEETS_ENABLED', 'false')</code></pre>
+                <div class="box info">
+                    <strong>優勢</strong>：集中管理配置，透過環境變數調整行為，不需修改程式碼
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 資料流向 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔄 資料流向分析</h2>
+                <div style="text-align: center; margin: 30px 0;">
+                    <div style="display: inline-block; background: #e3f2fd; padding: 20px 40px; border-radius: 15px; margin: 10px;">
+                        <strong>1. 前端</strong><br>generator.html → 收集表單資料
+                    </div>
+                    <div style="font-size: 30px; margin: 10px;">↓</div>
+                    <div style="display: inline-block; background: #fff3cd; padding: 20px 40px; border-radius: 15px; margin: 10px;">
+                        <strong>2. API 路由</strong><br>/api/generate → 驗證與分發
+                    </div>
+                    <div style="font-size: 30px; margin: 10px;">↓</div>
+                    <div style="display: inline-block; background: #d4edda; padding: 20px 40px; border-radius: 15px; margin: 10px;">
+                        <strong>3. 服務層</strong><br>PromptBuilder / AIService
+                    </div>
+                    <div style="font-size: 30px; margin: 10px;">↓</div>
+                    <div style="display: inline-block; background: #f8d7da; padding: 20px 40px; border-radius: 15px; margin: 10px;">
+                        <strong>4. 返回結果</strong><br>JSON Response → 前端展示
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 設計決策 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>💡 關鍵設計決策</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>為什麼同時支援模板和 AI 生成？</h3>
+                        <ul>
+                            <li><strong>成本考量</strong>：模板生成免費</li>
+                            <li><strong>可靠性</strong>：API 不可用時的備案</li>
+                            <li><strong>速度</strong>：模板幾乎即時</li>
+                            <li><strong>學習價值</strong>：展示良好結構</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>為什麼選擇 ChromaDB？</h3>
+                        <ul>
+                            <li><strong>嵌入式</strong>：不需獨立伺服器</li>
+                            <li><strong>易用性</strong>：幾行程式碼完成操作</li>
+                            <li><strong>效能</strong>：中小規模表現良好</li>
+                            <li><strong>可遷移</strong>：未來可升級</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>為什麼使用 SQLite？</h3>
+                        <ul>
+                            <li><strong>嵌入式</strong>：單一檔案儲存</li>
+                            <li><strong>可攜性</strong>：整個目錄可遷移</li>
+                            <li><strong>效能夠用</strong>：低頻操作</li>
+                            <li><strong>可升級</strong>：SQLAlchemy ORM</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>為什麼不用 React/Vue？</h3>
+                        <ul>
+                            <li><strong>降低門檻</strong>：HTML+JS 易理解</li>
+                            <li><strong>簡化部署</strong>：不需 npm 構建</li>
+                            <li><strong>互動夠用</strong>：原生 JS 能勝任</li>
+                            <li><strong>實用主義</strong>：解決問題優先</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 本節重點 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📌 本節重點回顧</h2>
+                <div class="grid-2">
+                    <div class="card" style="background: #d4edda;">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">學到的內容</div>
+                        <ul>
+                            <li>Flask 應用的標準目錄結構</li>
+                            <li>三大核心服務模組的職責</li>
+                            <li>配置驅動設計的優勢</li>
+                            <li>資料在系統中的流向</li>
+                            <li>關鍵技術選型的理由</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background: #e3f2fd;">
+                        <div class="card-icon">📖</div>
+                        <div class="card-title">設計哲學</div>
+                        <ul>
+                            <li>分層架構易於維護</li>
+                            <li>模組化支援擴展</li>
+                            <li>配置驅動提高靈活性</li>
+                            <li>實用主義優於技術炫技</li>
+                            <li>簡單是最好的設計</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="box success" style="text-align: center; margin-top: 30px;">
+                    <strong>下一節：深入了解互動式提示詞生成器的實作細節</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicators"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() {
+            const container = document.getElementById('indicators');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(i);
+                container.appendChild(dot);
+            }
+            document.addEventListener('keydown', handleKeydown);
+        }
+        function handleKeydown(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        }
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+        function changeSlide(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(index) { showSlide(index); }
+        init();
+    </script>
+</body>
+</html>

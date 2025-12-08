@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 4 - RAG 知識庫功能</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh; overflow: hidden; color: #333;
+        }
+        .nav-bar {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; z-index: 10000;
+        }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white; padding: 6px 16px; border-radius: 20px;
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            text-decoration: none; transition: all 0.3s ease;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); }
+        .slide { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; padding: 40px; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: flex; opacity: 1; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 24px; padding: 50px; max-width: 1200px; width: 95%; max-height: 85vh; overflow-y: auto; }
+        h1 { color: #f5576c; font-size: 48px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #f5576c; font-size: 36px; margin-bottom: 30px; border-bottom: 3px solid #f093fb; padding-bottom: 12px; }
+        h3 { color: #f5576c; font-size: 24px; margin: 25px 0 15px 0; }
+        p, li { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; }
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; font-size: 14px; }
+        .box { padding: 20px; border-radius: 12px; margin: 20px 0; border-left: 5px solid; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .highlight { background: linear-gradient(120deg, #f093fb 0%, #f5576c 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: white; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin: 25px 0; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 25px 0; }
+        .card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; }
+        .card:hover { transform: translateY(-5px); border-color: #f5576c; transition: all 0.3s; }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: 700; color: #f5576c; margin-bottom: 10px; }
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); color: white; width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); font-size: 20px; cursor: pointer; z-index: 9000; display: flex; align-items: center; justify-content: center; }
+        .prev-arrow { left: 20px; }
+        .next-arrow { right: 20px; }
+        .indicators { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 4000; padding: 10px 20px; background: rgba(0,0,0,0.3); border-radius: 25px; }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #f5576c; transform: scale(1.3); }
+        .screenshot { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 20px 0; }
+        .flow-diagram { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 30px 0; }
+        .flow-box { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 15px 25px; border-radius: 12px; text-align: center; font-weight: 600; }
+        .flow-arrow { font-size: 24px; color: #f5576c; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-title">Part 4 - RAG 知識庫功能</div>
+        <div class="nav-buttons">
+            <a href="Part3_互動式提示詞生成器.html" class="nav-btn">◀ 上一Part</a>
+            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Part5_Google_Sheets整合.html" class="nav-btn">下一Part ▶</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+        <div class="slide active">
+            <div class="content-card" style="text-align: center;">
+                <h4 style="color: #f093fb; margin-bottom: 10px;">CH5 AI Prompt 互動提示詞生成系統</h4>
+                <h1>Part 4：RAG 知識庫功能</h1>
+                <p style="font-size: 24px; color: #666; margin: 30px 0;">文件上傳、向量嵌入、語義搜尋與知識增強生成</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+                    <span class="highlight">Sentence Transformers</span>
+                    <span class="highlight">ChromaDB</span>
+                    <span class="highlight">語義搜尋</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🤔 什麼是 RAG？</h2>
+                <p><strong>RAG (Retrieval-Augmented Generation)</strong> 是結合檢索與生成的技術</p>
+                <div class="flow-diagram">
+                    <div class="flow-box">📄 知識庫文件</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">🔍 語義檢索</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">📝 相關內容</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">🤖 增強 AI 生成</div>
+                </div>
+                <div class="box info">
+                    <strong>核心價值</strong>：讓 AI 能參考你上傳的文件來生成更精準的內容，而非僅依賴模型的預訓練知識
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📤 文件上傳與解析流程</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>支援格式</h3>
+                        <ul>
+                            <li><code>.txt</code> - 純文字檔</li>
+                            <li><code>.md</code> - Markdown 檔</li>
+                            <li><code>.pdf</code> - PDF 文件（PyPDF2）</li>
+                            <li><code>.docx</code> - Word 文件（python-docx）</li>
+                        </ul>
+                        <h3>處理流程</h3>
+                        <ol>
+                            <li>接收上傳檔案</li>
+                            <li>驗證格式與大小</li>
+                            <li>提取純文字內容</li>
+                            <li>生成唯一文件 ID</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <img src="../截圖/ch5_rag_upload.png" alt="RAG 上傳" class="screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>✂️ 文本分段策略</h2>
+                <pre><code>def _chunk_text(self, text: str) -> List[str]:
+    """滑動視窗分段演算法"""
+    chunks = []
+    start = 0
+
+    while start < len(text):
+        end = start + self.chunk_size  # 500 字元
+        chunk = text[start:end]
+        chunks.append(chunk)
+        start += (self.chunk_size - self.chunk_overlap)  # 重疊 50 字元
+
+    return chunks</code></pre>
+                <div class="grid-2">
+                    <div class="box info">
+                        <strong>chunk_size = 500</strong><br>
+                        每個片段約 500 字元，包含足夠上下文又不過於冗長
+                    </div>
+                    <div class="box success">
+                        <strong>chunk_overlap = 50</strong><br>
+                        相鄰片段重疊 50 字元，避免在句子中間切斷
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🧠 Sentence Transformers 嵌入模型</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>為什麼選擇它？</h3>
+                        <ul>
+                            <li><strong>開源免費</strong>：本地運行，無 API 費用</li>
+                            <li><strong>隱私保護</strong>：資料不上傳外部</li>
+                            <li><strong>多語言支援</strong>：支援 50+ 語言</li>
+                            <li><strong>效能平衡</strong>：模型 470MB，速度快</li>
+                        </ul>
+                        <h3>使用模型</h3>
+                        <code>paraphrase-multilingual-MiniLM-L12-v2</code>
+                        <ul>
+                            <li>輸出維度：384 維向量</li>
+                            <li>適合中文、英文混合場景</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <pre><code>from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer(
+    'paraphrase-multilingual-MiniLM-L12-v2'
+)
+
+# 將文本轉換為向量
+embeddings = model.encode([
+    "Flask API 開發",
+    "Python 網頁應用",
+    "資料庫設計"
+])
+
+# 結果：(3, 384) 的向量矩陣</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔍 ChromaDB 向量檢索</h2>
+                <pre><code># 儲存向量
+collection.add(
+    ids=["doc_001_chunk_0", "doc_001_chunk_1"],
+    embeddings=embeddings.tolist(),
+    documents=["Flask 是一個輕量級...", "使用 route 裝飾器..."],
+    metadatas=[{"filename": "flask.md", "chunk": 0}, ...]
+)
+
+# 語義搜尋
+results = collection.query(
+    query_embeddings=query_embedding,  # 查詢向量
+    n_results=5  # 返回前 5 個
+)
+
+# 結果包含：documents, distances, metadatas</code></pre>
+                <div class="box info">
+                    <strong>餘弦相似度</strong>：計算兩向量夾角的餘弦值，越接近 1 表示越相似
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔎 語義搜尋結果</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>搜尋特點</h3>
+                        <ul>
+                            <li><strong>語義理解</strong>：不只是關鍵字匹配</li>
+                            <li><strong>相關性排序</strong>：按相似度降序</li>
+                            <li><strong>來源追蹤</strong>：知道結果來自哪個文件</li>
+                        </ul>
+                        <h3>範例</h3>
+                        <p>搜尋「內容管理」可能找到「部落格系統」的文件，因為語義相關</p>
+                    </div>
+                    <div>
+                        <img src="../截圖/ch5_rag_search_detail.png" alt="RAG 搜尋結果" class="screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>✨ 知識增強生成整合</h2>
+                <pre><code>def generate_with_rag(self, requirements, query):
+    # 1. 先進行 RAG 檢索
+    related_chunks = rag_service.search(query, top_k=5)
+
+    # 2. 將檢索結果整合到 AI prompt
+    context = "以下是相關的提示詞範本供參考：\n\n"
+    for i, chunk in enumerate(related_chunks):
+        context += f"範本 {i+1}:\n{chunk['content']}\n\n"
+
+    # 3. 增強後的 prompt
+    enhanced_prompt = f"""
+    {context}
+    請參考這些範本的風格和結構，根據以下需求生成新的提示詞：
+    {requirements}
+    """
+
+    # 4. 呼叫 AI 生成
+    return ai_service.generate(enhanced_prompt)</code></pre>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📌 本節重點回顧</h2>
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">📄</div>
+                        <div class="card-title">文件處理</div>
+                        <ul>
+                            <li>支援多種格式</li>
+                            <li>滑動視窗分段</li>
+                            <li>重疊保持完整性</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🧠</div>
+                        <div class="card-title">向量嵌入</div>
+                        <ul>
+                            <li>本地模型免費</li>
+                            <li>384 維向量</li>
+                            <li>多語言支援</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔍</div>
+                        <div class="card-title">語義搜尋</div>
+                        <ul>
+                            <li>餘弦相似度</li>
+                            <li>毫秒級回應</li>
+                            <li>增強 AI 生成</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicators"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() {
+            const container = document.getElementById('indicators');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(i);
+                container.appendChild(dot);
+            }
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'ArrowRight') changeSlide(1);
+            });
+        }
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+        function changeSlide(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(index) { showSlide(index); }
+        init();
+    </script>
+</body>
+</html>

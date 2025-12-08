@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 6 - 疑難排解與效能優化</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            min-height: 100vh; overflow: hidden; color: #333;
+        }
+        .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; z-index: 10000; }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); }
+        .slide { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; padding: 40px; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: flex; opacity: 1; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 24px; padding: 50px; max-width: 1200px; width: 95%; max-height: 85vh; overflow-y: auto; }
+        h1 { color: #fa709a; font-size: 48px; margin-bottom: 20px; text-align: center; }
+        h2 { color: #fa709a; font-size: 36px; margin-bottom: 30px; border-bottom: 3px solid #fee140; padding-bottom: 12px; }
+        h3 { color: #fa709a; font-size: 24px; margin: 25px 0 15px 0; }
+        p, li { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 12px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; }
+        pre { background: #282c34; color: #abb2bf; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; font-size: 14px; }
+        .box { padding: 20px; border-radius: 12px; margin: 20px 0; border-left: 5px solid; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        .warning { background: #fff3cd; border-color: #ffc107; }
+        .success { background: #d4edda; border-color: #28a745; }
+        .danger { background: #f8d7da; border-color: #dc3545; }
+        .highlight { background: linear-gradient(120deg, #fa709a 0%, #fee140 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: white; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin: 25px 0; }
+        .card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; }
+        .card:hover { transform: translateY(-5px); border-color: #fa709a; transition: all 0.3s; }
+        .card-icon { font-size: 40px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: 700; color: #fa709a; margin-bottom: 10px; }
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); color: white; width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); font-size: 20px; cursor: pointer; z-index: 9000; display: flex; align-items: center; justify-content: center; }
+        .prev-arrow { left: 20px; }
+        .next-arrow { right: 20px; }
+        .indicators { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 4000; padding: 10px 20px; background: rgba(0,0,0,0.3); border-radius: 25px; }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #fee140; transform: scale(1.3); }
+        .screenshot { max-width: 100%; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); margin: 20px 0; }
+        .qa-item { background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 15px 0; border-left: 4px solid #fa709a; }
+        .qa-q { font-weight: 700; color: #fa709a; margin-bottom: 10px; }
+        .qa-a { color: #444; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div class="nav-title">Part 6 - 疑難排解與效能優化</div>
+        <div class="nav-buttons">
+            <a href="Part5_Google_Sheets整合.html" class="nav-btn">◀ 上一Part</a>
+            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Part7_進階擴展與客製化.html" class="nav-btn">下一Part ▶</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+        <div class="slide active">
+            <div class="content-card" style="text-align: center;">
+                <h4 style="color: #fee140; margin-bottom: 10px;">CH5 AI Prompt 互動提示詞生成系統</h4>
+                <h1>Part 6：疑難排解與效能優化</h1>
+                <p style="font-size: 24px; color: #666; margin: 30px 0;">常見問題解決方案與系統效能調校</p>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px;">
+                    <span class="highlight">安裝問題</span>
+                    <span class="highlight">AI 服務</span>
+                    <span class="highlight">效能優化</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔧 安裝與啟動問題</h2>
+                <div class="qa-item">
+                    <div class="qa-q">❓ pip install 時出現錯誤</div>
+                    <div class="qa-a">
+                        <ul>
+                            <li>檢查 Python 版本 ≥ 3.12：<code>python --version</code></li>
+                            <li>使用國內鏡像：<code>pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple</code></li>
+                            <li>使用虛擬環境避免權限問題</li>
+                            <li>建立乾淨虛擬環境解決相依性衝突</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-q">❓ 瀏覽器無法訪問 localhost:5001</div>
+                    <div class="qa-a">
+                        <ul>
+                            <li>確認 Flask 是否成功啟動（查看終端機）</li>
+                            <li>檢查防火牆是否阻擋 5001 埠</li>
+                            <li>確認埠未被佔用，或修改 <code>PORT=5002</code></li>
+                            <li>確保使用 <code>http://</code> 而非 <code>https://</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>🤖 AI 服務相關問題</h2>
+                <div class="qa-item">
+                    <div class="qa-q">❓ OpenAI API 回傳「Rate limit exceeded」</div>
+                    <div class="qa-a">
+                        <ul>
+                            <li><strong>短期</strong>：等待一段時間後重試</li>
+                            <li><strong>長期</strong>：升級 API 方案或使用多 Key 輪替</li>
+                            <li><strong>替代</strong>：切換到 Gemini（免費額度較多）</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-q">❓ AI 生成的提示詞品質不如預期</div>
+                    <div class="qa-a">
+                        <ul>
+                            <li>提供更詳細的需求描述</li>
+                            <li>選擇「詳細」或「超詳細」等級</li>
+                            <li>啟用「使用知識庫增強」選項</li>
+                            <li>使用優化功能取得改進建議</li>
+                            <li>嘗試切換到更強的模型（GPT-4 / Gemini Pro）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📚 RAG 知識庫問題</h2>
+                <div class="qa-item">
+                    <div class="qa-q">❓ 首次啟動 RAG 服務很慢</div>
+                    <div class="qa-a">
+                        <p>正常現象！需要下載 Sentence Transformers 模型（約 470MB）</p>
+                        <pre><code># 預先下載模型
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')</code></pre>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-q">❓ 上傳文件後搜尋不到內容</div>
+                    <div class="qa-a">
+                        <ul>
+                            <li>確認上傳成功（檢查日誌）</li>
+                            <li>用文件中實際出現的詞彙搜尋測試</li>
+                            <li>降低 <code>RAG_SIMILARITY_THRESHOLD</code>（例如 0.5）</li>
+                            <li>刪除 <code>data/vector_store/</code> 重建資料庫</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>⚡ 效能優化策略</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">🚀</div>
+                        <div class="card-title">AI 生成速度</div>
+                        <ul>
+                            <li>使用快速模型：Gemini Flash / GPT-3.5</li>
+                            <li>減少 RAG_TOP_K（例如 5 → 3）</li>
+                            <li>前端顯示進度指示器</li>
+                            <li>考慮使用串流回應</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔍</div>
+                        <div class="card-title">RAG 搜尋速度</div>
+                        <ul>
+                            <li>刪除無用文件減少 chunk 數</li>
+                            <li>增大 chunk_size（500 → 1000）</li>
+                            <li>大規模資料考慮 FAISS / Pinecone</li>
+                            <li>實作結果快取</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">💾</div>
+                        <div class="card-title">記憶體使用</div>
+                        <ul>
+                            <li>確認模型只載入一次（單例模式）</li>
+                            <li>使用磁碟持久化模式</li>
+                            <li>關閉不需要的功能：<code>ENABLE_RAG=false</code></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">監控與診斷</div>
+                        <ul>
+                            <li>查看 logs/app.log 日誌</li>
+                            <li>使用系統監控工具</li>
+                            <li>追蹤 API 回應時間</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📊 系統監控</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>記憶體使用情況</h3>
+                        <ul>
+                            <li>Sentence Transformers 模型約 500MB-1GB</li>
+                            <li>確認沒有記憶體洩漏</li>
+                            <li>向量資料會佔用部分記憶體</li>
+                        </ul>
+                        <div class="box warning">
+                            <strong>⚠️ 注意</strong>：如果記憶體持續增長，檢查是否每次請求都重新載入模型
+                        </div>
+                    </div>
+                    <div>
+                        <img src="../截圖/ch5_memory_usage.png" alt="記憶體監控" class="screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="content-card">
+                <h2>📌 本節重點回顧</h2>
+                <div class="grid-2">
+                    <div class="card" style="background: #d4edda;">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">問題排解要點</div>
+                        <ul>
+                            <li>查看終端機錯誤訊息</li>
+                            <li>確認環境配置正確</li>
+                            <li>檢查網路與防火牆</li>
+                            <li>善用日誌診斷問題</li>
+                        </ul>
+                    </div>
+                    <div class="card" style="background: #e3f2fd;">
+                        <div class="card-icon">⚡</div>
+                        <div class="card-title">效能優化原則</div>
+                        <ul>
+                            <li>選擇適合的模型</li>
+                            <li>減少不必要的資料</li>
+                            <li>善用快取機制</li>
+                            <li>監控資源使用</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicators"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() {
+            const container = document.getElementById('indicators');
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(i);
+                container.appendChild(dot);
+            }
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'ArrowRight') changeSlide(1);
+            });
+        }
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+            document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+        }
+        function changeSlide(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(index) { showSlide(index); }
+        init();
+    </script>
+</body>
+</html>

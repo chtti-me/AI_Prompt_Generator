@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}設定 - AI Prompt Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-gear"></i> 系統設定
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="settings-form">
+                    <!-- AI 服務設定 -->
+                    <h6 class="border-bottom pb-2 mb-3">AI 服務配置</h6>
+
+                    <div class="mb-3">
+                        <label class="form-label">OpenAI API Key</label>
+                        <input type="password" class="form-control" id="openai-key" placeholder="sk-proj-...">
+                        <div class="form-text">從 https://platform.openai.com/api-keys 取得</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Google Gemini API Key</label>
+                        <input type="password" class="form-control" id="gemini-key" placeholder="AIzaSy...">
+                        <div class="form-text">從 https://aistudio.google.com/app/apikey 取得</div>
+                    </div>
+
+                    <!-- Google Sheets 設定 -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Google Sheets 整合</h6>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable-sheets">
+                            <label class="form-check-label" for="enable-sheets">
+                                啟用 Google Sheets 同步
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="sheets-settings" style="display:none;">
+                        <label class="form-label">Google Sheet ID</label>
+                        <input type="text" class="form-control" id="sheet-id" placeholder="1ABC...xyz">
+                        <div class="form-text">從 Google Sheets URL 中取得 ID</div>
+                    </div>
+
+                    <!-- 其他設定 -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">其他設定</h6>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable-rag" checked>
+                            <label class="form-check-label" for="enable-rag">
+                                啟用 RAG 知識庫
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable-analytics" checked>
+                            <label class="form-check-label" for="enable-analytics">
+                                啟用使用統計
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 儲存設定
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 系統資訊 -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> 系統資訊
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li><strong>版本:</strong> 1.0.0</li>
+                    <li><strong>Python:</strong> 3.12+</li>
+                    <li><strong>Flask:</strong> 3.0+</li>
+                    <li><strong>資料庫:</strong> SQLite</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const enableSheetsCheckbox = document.getElementById('enable-sheets');
+    const sheetsSettings = document.getElementById('sheets-settings');
+
+    enableSheetsCheckbox.addEventListener('change', function() {
+        sheetsSettings.style.display = this.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // 儲存設定邏輯
+        showNotification('設定已儲存（功能開發中）', 'info');
+    });
+});
+</script>
+{% endblock %}
