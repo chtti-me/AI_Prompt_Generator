@@ -1,4 +1,4 @@
-# CH5｜AI Prompt 互動提示詞生成系統
+# AI Prompt 互動提示詞生成系統
 
 <div align="center">
 
@@ -8,13 +8,15 @@
 
 **智能提示詞生成平台 - 結合 AI 與 RAG 技術的完整解決方案**
 
-[📊 完整課程簡報](slides/CH5_Overview.html) | [🎥 YouTube 頻道](https://www.youtube.com/@Liang-yt02) | [📘 Facebook](https://www.facebook.com/iddmail)
+### 📊 [點此進入課程簡報](https://chatgpt3a01.github.io/AI_Prompt_Generator/slides/Overview.html)
+
+[🎥 YouTube 頻道](https://www.youtube.com/@Liang-yt02) | [📘 Facebook](https://www.facebook.com/iddmail)
 
 </div>
 
 ---
 
-## 📋 本章節 Part 說明
+## 📋 課程 Part 說明
 
 | Part | 主題 | 說明 |
 |------|------|------|
@@ -56,8 +58,8 @@
 ### 方法一：Git Clone（推薦）
 
 ```bash
-git clone https://github.com/ChatGPT3a01/CH5_AI_Prompt_Generator.git
-cd CH5_AI_Prompt_Generator
+git clone https://github.com/ChatGPT3a01/AI_Prompt_Generator.git
+cd AI_Prompt_Generator
 ```
 
 ### 方法二：下載 ZIP
@@ -80,7 +82,7 @@ cd CH5_AI_Prompt_Generator
 
 ```bash
 # 1. 進入專案目錄
-cd CH5_AI_Prompt_Generator
+cd AI_Prompt_Generator
 
 # 2. 執行自動安裝腳本
 start_windows.bat
@@ -96,7 +98,7 @@ start_windows.bat
 
 ```bash
 # 1. 進入專案目錄
-cd CH5_AI_Prompt_Generator
+cd AI_Prompt_Generator
 
 # 2. 給予執行權限並執行
 chmod +x start.sh
@@ -196,7 +198,7 @@ git push heroku main
 ### 技術架構
 
 ```
-CH5_AI_Prompt_Generator/
+AI_Prompt_Generator/
 ├── app.py                 # Flask 應用入口
 ├── config.py              # 配置管理
 ├── src/
@@ -267,7 +269,7 @@ A: 支援 TXT、Markdown、PDF、DOCX 四種格式上傳到知識庫。
 ## 📁 專案結構
 
 ```
-CH5_AI_Prompt_Generator/
+AI_Prompt_Generator/
 ├── app.py                 # Flask 主應用
 ├── config.py              # 配置管理
 ├── requirements.txt       # Python 依賴

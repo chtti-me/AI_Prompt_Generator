@@ -72,6 +72,7 @@ htmlcov/
 
 # 書籍內容（販售內容，禁止上傳）
 book/
+截圖/
 *.docx
 *.md
 !README.md
