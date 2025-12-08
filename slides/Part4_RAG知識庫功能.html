@@ -63,8 +63,11 @@
         <div class="nav-title">Part 4 - RAG 知識庫功能</div>
         <div class="nav-buttons">
             <a href="Part3_互動式提示詞生成器.html" class="nav-btn">◀ 上一Part</a>
-            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Overview.html" class="nav-btn">📋 統整頁</a>
             <a href="Part5_Google_Sheets整合.html" class="nav-btn">下一Part ▶</a>
+            <a href="https://www.facebook.com/iddmail" target="_blank" class="nav-btn">📘 FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">🎥 YT</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
         </div>
     </div>
 
@@ -331,6 +334,13 @@ results = collection.query(
         }
         function changeSlide(dir) { showSlide(currentSlide + dir); }
         function goToSlide(index) { showSlide(index); }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
         init();
     </script>
 </body>

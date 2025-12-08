@@ -83,8 +83,11 @@
         <div class="nav-title">Part 3 - 互動式提示詞生成器</div>
         <div class="nav-buttons">
             <a href="Part2_專案架構與服務設計.html" class="nav-btn">◀ 上一Part</a>
-            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Overview.html" class="nav-btn">📋 統整頁</a>
             <a href="Part4_RAG知識庫功能.html" class="nav-btn">下一Part ▶</a>
+            <a href="https://www.facebook.com/iddmail" target="_blank" class="nav-btn">📘 FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">🎥 YT</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
         </div>
     </div>
 
@@ -343,6 +346,13 @@ DETAIL_LEVELS = {
         }
         function changeSlide(dir) { showSlide(currentSlide + dir); }
         function goToSlide(index) { showSlide(index); }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
         init();
     </script>
 </body>

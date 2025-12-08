@@ -48,7 +48,10 @@
         <div class="nav-title">Part 7 - 進階擴展與客製化</div>
         <div class="nav-buttons">
             <a href="Part6_疑難排解與效能優化.html" class="nav-btn">◀ 上一Part</a>
-            <a href="CH5_Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="Overview.html" class="nav-btn">📋 統整頁</a>
+            <a href="https://www.facebook.com/iddmail" target="_blank" class="nav-btn">📘 FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">🎥 YT</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
         </div>
     </div>
 
@@ -239,6 +242,13 @@ def _generate_with_claude(self, prompt: str) -> str:
         }
         function changeSlide(dir) { showSlide(currentSlide + dir); }
         function goToSlide(index) { showSlide(index); }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
         init();
     </script>
 </body>
