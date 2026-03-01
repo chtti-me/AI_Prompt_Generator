@@ -5,12 +5,27 @@ RAG (Retrieval-Augmented Generation) 知識庫服務
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
-import chromadb
-from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
 from config import config
 
 logger = logging.getLogger(__name__)
+
+# 嘗試匯入 ChromaDB，如果失敗則標記為不可用
+CHROMADB_AVAILABLE = False
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"ChromaDB 無法匯入（可能與 Python 3.14 不相容）: {e}")
+    logger.warning("RAG 功能將被禁用，但應用程式仍可正常運行")
+
+# 嘗試匯入 SentenceTransformer
+SENTENCE_TRANSFORMER_AVAILABLE = False
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMER_AVAILABLE = True
+except Exception as e:
+    logger.warning(f"SentenceTransformer 無法匯入: {e}")
 
 
 class RAGService:
@@ -18,26 +33,45 @@ class RAGService:
 
     def __init__(self):
         """初始化 RAG 服務"""
-        # 初始化 ChromaDB
-        self.client = chromadb.Client(Settings(
-            persist_directory=config.CHROMA_PERSIST_DIRECTORY,
-            anonymized_telemetry=False
-        ))
+        self.available = False
+        self.client = None
+        self.collection = None
+        self.embedding_model = None
 
-        # 取得或建立 collection
-        self.collection = self.client.get_or_create_collection(
-            name=config.CHROMA_COLLECTION_NAME,
-            metadata={"description": "Prompt templates library"}
-        )
+        # 檢查 ChromaDB 是否可用
+        if not CHROMADB_AVAILABLE:
+            logger.error("ChromaDB 不可用，RAG 服務無法初始化")
+            logger.error("建議：使用 Python 3.12 或 3.13 以獲得完整的 RAG 功能支援")
+            return
 
-        # 初始化嵌入模型
-        if config.EMBEDDING_PROVIDER == 'sentence-transformers':
-            self.embedding_model = SentenceTransformer(config.SENTENCE_TRANSFORMER_MODEL)
-            logger.info(f"已載入 Sentence Transformer: {config.SENTENCE_TRANSFORMER_MODEL}")
-        else:
-            self.embedding_model = None
+        try:
+            # 初始化 ChromaDB
+            self.client = chromadb.Client(Settings(
+                persist_directory=config.CHROMA_PERSIST_DIRECTORY,
+                anonymized_telemetry=False
+            ))
 
-        logger.info("RAG 服務已初始化")
+            # 取得或建立 collection
+            self.collection = self.client.get_or_create_collection(
+                name=config.CHROMA_COLLECTION_NAME,
+                metadata={"description": "Prompt templates library"}
+            )
+
+            # 初始化嵌入模型
+            if config.EMBEDDING_PROVIDER == 'sentence-transformers' and SENTENCE_TRANSFORMER_AVAILABLE:
+                self.embedding_model = SentenceTransformer(config.SENTENCE_TRANSFORMER_MODEL)
+                logger.info(f"已載入 Sentence Transformer: {config.SENTENCE_TRANSFORMER_MODEL}")
+            else:
+                self.embedding_model = None
+                logger.warning("嵌入模型不可用")
+
+            self.available = True
+            logger.info("RAG 服務已初始化")
+
+        except Exception as e:
+            logger.error(f"RAG 服務初始化失敗: {e}")
+            logger.error("RAG 功能將被禁用，但應用程式仍可正常運行")
+            self.available = False
 
     def add_document(self, doc_id: str, content: str, metadata: Dict = None) -> bool:
         """
@@ -51,6 +85,10 @@ class RAGService:
         Returns:
             是否成功
         """
+        if not self.available:
+            logger.error("RAG 服務不可用，無法新增文件")
+            return False
+
         try:
             # 分段處理
             chunks = self._chunk_text(content)
@@ -99,6 +137,10 @@ class RAGService:
         Returns:
             搜尋結果列表
         """
+        if not self.available:
+            logger.error("RAG 服務不可用，無法執行搜尋")
+            return []
+
         if top_k is None:
             top_k = config.RAG_TOP_K
 
@@ -139,6 +181,10 @@ class RAGService:
         Returns:
             是否成功
         """
+        if not self.available:
+            logger.error("RAG 服務不可用，無法刪除文件")
+            return False
+
         try:
             # 查找所有相關的 chunks
             results = self.collection.get(
@@ -159,6 +205,10 @@ class RAGService:
 
     def get_all_documents(self) -> List[Dict]:
         """取得所有文件列表"""
+        if not self.available:
+            logger.error("RAG 服務不可用，無法取得文件列表")
+            return []
+
         try:
             results = self.collection.get()
 
@@ -228,12 +278,24 @@ class RAGService:
 
     def get_stats(self) -> Dict:
         """取得統計資訊"""
+        if not self.available:
+            return {
+                'total_chunks': 0,
+                'available': False,
+                'error': 'RAG 服務不可用'
+            }
+
         try:
             count = self.collection.count()
             return {
                 'total_chunks': count,
-                'collection_name': config.CHROMA_COLLECTION_NAME
+                'collection_name': config.CHROMA_COLLECTION_NAME,
+                'available': True
             }
         except Exception as e:
             logger.error(f"取得統計失敗: {e}")
-            return {'total_chunks': 0}
+            return {
+                'total_chunks': 0,
+                'available': False,
+                'error': str(e)
+            }

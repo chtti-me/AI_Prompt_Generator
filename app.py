@@ -290,15 +290,87 @@ def rag_upload():
                 'error': '檔案名稱為空'
             }), 400
 
-        # 讀取檔案內容
-        content = file.read().decode('utf-8')
+        # 取得檔案副檔名
+        filename = file.filename.lower()
+        file_ext = filename.rsplit('.', 1)[1] if '.' in filename else ''
+        
+        # 根據檔案類型提取內容
+        content = None
+        if file_ext == 'pdf':
+            # 處理 PDF 檔案
+            try:
+                from PyPDF2 import PdfReader
+                import io
+                pdf_file = io.BytesIO(file.read())
+                pdf_reader = PdfReader(pdf_file)
+                content = ""
+                for page in pdf_reader.pages:
+                    content += page.extract_text() + "\n"
+                logger.info(f"成功解析 PDF 檔案: {file.filename}")
+            except Exception as e:
+                logger.error(f"PDF 解析失敗: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'PDF 檔案解析失敗: {str(e)}'
+                }), 400
+                
+        elif file_ext == 'docx':
+            # 處理 Word 檔案
+            try:
+                from docx import Document
+                import io
+                doc_file = io.BytesIO(file.read())
+                doc = Document(doc_file)
+                content = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+                logger.info(f"成功解析 DOCX 檔案: {file.filename}")
+            except Exception as e:
+                logger.error(f"DOCX 解析失敗: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Word 檔案解析失敗: {str(e)}'
+                }), 400
+                
+        else:
+            # 處理文字檔案（.txt, .md 等）
+            file_bytes = file.read()
+            
+            # 嘗試多種編碼
+            encodings = ['utf-8', 'utf-8-sig', 'big5', 'gb2312', 'gbk', 'gb18030', 'windows-1252', 'latin-1']
+            content = None
+            
+            for encoding in encodings:
+                try:
+                    content = file_bytes.decode(encoding)
+                    logger.info(f"成功使用 {encoding} 編碼讀取檔案: {file.filename}")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if content is None:
+                # 如果所有編碼都失敗，使用 errors='replace' 或 'ignore'
+                try:
+                    content = file_bytes.decode('utf-8', errors='replace')
+                    logger.warning(f"使用 UTF-8 並替換無效字元讀取檔案: {file.filename}")
+                except Exception as e:
+                    logger.error(f"檔案解碼失敗: {e}")
+                    return jsonify({
+                        'success': False,
+                        'error': f'無法讀取檔案內容，可能是編碼問題: {str(e)}'
+                    }), 400
+
+        if not content or not content.strip():
+            return jsonify({
+                'success': False,
+                'error': '檔案內容為空或無法提取文字'
+            }), 400
+
         doc_id = f"doc_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         # 新增到 RAG 知識庫
         success = rag_service.add_document(
             doc_id=doc_id,
             content=content,
-            metadata={'filename': file.filename}
+            metadata={'filename': file.filename, 'file_type': file_ext}
         )
 
         if success:
